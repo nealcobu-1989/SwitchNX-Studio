@@ -1,0 +1,2 @@
+ES: Tus proyectos, una carpeta cada uno. Los crea la app (Empezar un proyecto).
+EN: Your projects, one folder each. The app creates them (Start a project).

@@ -1,0 +1,6 @@
+pywebview>=5.3
+lz4>=4.3
+py7zr>=0.21
+texture2ddecoder>=1.0.5
+pyyaml>=6
+numpy>=1.26

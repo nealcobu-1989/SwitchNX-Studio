@@ -1,0 +1,16 @@
+# Desktop build, only to test the screen and the list logic: make -f Makefile.linux
+CXX ?= g++
+CXXFLAGS = -std=c++17 -O1 -Wall -Wextra $(shell pkg-config --cflags sdl2 SDL2_ttf SDL2_image)
+LIBS = $(shell pkg-config --libs sdl2 SDL2_ttf SDL2_image)
+
+SRC = source/main.cpp source/modlist.cpp source/crash.cpp
+HDR = source/modlist.hpp source/crash.hpp
+
+skynxmods: $(SRC) $(HDR)
+	$(CXX) $(CXXFLAGS) $(SRC) -o $@ $(LIBS)
+
+test_modlist: tests/test_modlist.cpp source/modlist.cpp source/crash.cpp $(HDR)
+	$(CXX) -std=c++17 -O1 -Wall -Isource tests/test_modlist.cpp source/modlist.cpp source/crash.cpp -o $@
+
+clean:
+	rm -f skynxmods test_modlist

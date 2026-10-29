@@ -1,0 +1,3 @@
+#!/bin/sh
+# stand-in: the real ffmpeg from PATH (tests that need it skip without it)
+exec ffmpeg "$@"

@@ -1,0 +1,20 @@
+SkyNX: carpetas de trabajo de SwitchNX Studio / SwitchNX Studio's working folders
+==================================================================================
+
+ES: Copia esta carpeta "SkyNX" a C:\ (queda C:\SkyNX). La app busca todo aquí por
+defecto; en Ajustes puedes cambiar cada ruta. Cada subcarpeta trae un LEEME con lo
+que va dentro. La app no escribe fuera de C:\SkyNX (salvo sus ajustes en %APPDATA%).
+
+  SwitchNX Studio.exe     la app (pon aquí el .exe del release)
+  Tools\                  herramientas externas (texconv, VGAudioCli, ffmpeg...)
+  Vanilla\INIs\           las inis limpias de TU consola, para proyectos nuevos
+  Vanilla\BSAs\           los archivos del juego de TU consola (BSA y plugins)
+  Base Mods\USSEP\        el USSEP ya convertido para Switch, si lo usas
+  Library\Projects\       tus proyectos (los crea la app)
+  Library\Mods\           mods sueltos tal como los bajas
+
+EN: Copy this "SkyNX" folder to C:\ (so it's C:\SkyNX). The app looks for everything
+here by default; each path can be changed in Settings. Every subfolder has a LEEME with
+what goes in it. The app doesn't write outside C:\SkyNX (besides its settings in %APPDATA%).
+
+Nunca subas ni compartas archivos del juego. / Never upload or share game files.

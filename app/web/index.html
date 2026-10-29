@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwitchNX Studio</title>
+<link rel="icon" href="img/emblem.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="smoke" aria-hidden="true"></div>
+<div class="splash" id="splash" hidden></div>
+
+<header class="top">
+  <div class="brand"><img src="img/emblem.png" alt="" class="emblem">SwitchNX Studio</div>
+  <div class="packname" id="packname"></div>
+  <div class="top-actions">
+    <div class="lang" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="es">ES</button>
+    </div>
+    <button class="primary sm" id="btn-create-pack" hidden data-t="drCreate"></button>
+    <button class="link" id="btn-library-top" data-t="nav.library"></button>
+    <button class="link help-btn" id="btn-help" data-t="help"></button>
+    <button class="link" id="btn-open-top" hidden data-t="openOther"></button>
+  </div>
+</header>
+
+<nav class="menu" id="menu" hidden>
+  <button data-page="resumen" class="on" data-t="nav.summary"></button>
+  <button data-page="doctor"><span data-t="nav.doctor"></span> <span class="count" id="nav-crit"></span></button>
+  <button data-page="add" data-t="nav.add"></button>
+  <button data-page="mods" data-t="nav.mods"></button>
+  <button data-page="orden" data-t="nav.order"></button>
+  <button data-page="texturas" data-t="nav.textures"></button>
+  <button data-page="historial" data-t="nav.history"></button>
+  <button data-page="sd" data-t="nav.sd"></button>
+  <button data-page="convertir" data-t="nav.convert"></button>
+  <button data-page="library" data-t="nav.library"></button>
+  <button data-page="ajustes" data-t="nav.settings"></button>
+</nav>
+
+<nav class="menu" id="menu-ws" hidden>
+  <button data-page="mesa" data-t="ws.bench"></button>
+  <button data-page="convertir" data-t="nav.convert"></button>
+  <button data-page="juntar" data-t="ws.join"></button>
+  <button data-page="fusionar" data-t="ws.merge"></button>
+  <button data-page="historial" data-t="nav.history"></button>
+  <button data-page="taller" data-t="ws.home"></button>
+</nav>
+
+<main id="main">
+  <section class="page welcome on" id="p-welcome"></section>
+  <section class="page" id="p-new"></section>
+  <section class="page" id="p-setup"></section>
+  <section class="page" id="p-taller"></section>
+  <section class="page" id="p-mesa"></section>
+  <section class="page" id="p-juntar"></section>
+  <section class="page" id="p-fusionar"></section>
+  <section class="page" id="p-resumen"></section>
+  <section class="page" id="p-doctor"></section>
+  <section class="page" id="p-add"></section>
+  <section class="page" id="p-library"></section>
+  <section class="page" id="p-mods"></section>
+  <section class="page" id="p-orden"></section>
+  <section class="page" id="p-texturas"></section>
+  <section class="page" id="p-historial"></section>
+  <section class="page" id="p-sd"></section>
+  <section class="page" id="p-convertir"></section>
+  <section class="page" id="p-ajustes"></section>
+  <section class="page" id="p-help"></section>
+</main>
+
+<footer class="hud" id="hud" hidden>
+  <div class="bar magicka" id="bar-ccc"><div class="fill"></div><span class="cap l"></span><span class="cap r"></span><div class="lbl"></div></div>
+  <div class="bar health" id="bar-health"><div class="fill"></div><span class="cap l"></span><span class="cap r"></span><div class="lbl"></div></div>
+  <div class="bar stamina" id="bar-ini"><div class="fill"></div><span class="cap l"></span><span class="cap r"></span><div class="lbl"></div></div>
+</footer>
+
+<div class="veil" id="veil" hidden>
+  <div class="veil-box">
+    <div class="veil-title" id="veil-title"></div>
+    <div class="veil-bar"><div id="veil-fill"></div></div>
+    <div class="veil-label" id="veil-label"></div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h3 id="dlg-title"></h3>
+    <div id="dlg-body"></div>
+    <div class="dlg-actions">
+      <button value="cancel" class="ghost" id="dlg-cancel"></button>
+      <button value="ok" id="dlg-ok" class="primary"></button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" hidden></div>
+<div class="dropveil" id="dropveil" hidden><div data-t="dropHere"></div></div>
+<script src="manual.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

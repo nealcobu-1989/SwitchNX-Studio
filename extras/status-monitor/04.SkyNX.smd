@@ -1,0 +1,193 @@
+Name = SkyNX
+NAME_LOCALE{"ES-419", "SkyNX"}
+NAME_LOCALE{"ES-ES", "SkyNX"}
+LayerWidth = 1280
+LayerHeight = 28
+VERSION = 1
+
+; One thin strip for testing modpacks: game RAM now, the highest game RAM since the
+; mode was opened (and the time it happened), the three game cores, GPU, FPS, what
+; the game reads from the SD and, optionally, the SoC temperature. Top right.
+; The RAM numbers change color at two limits you can set with Y.
+
+User_RefreshRate = 4
+;;User_RefreshRate_Name = Refresh rate
+;;User_RefreshRate_Description = Higher catches shorter RAM spikes. Costs a little of the OS core.
+;;User_RefreshRate_DefaultValue = 4
+;;User_RefreshRate_Range = {int, 1, 30}
+User_WarnMB = 2700
+;;User_WarnMB_Name = Yellow from (MB)
+;;User_WarnMB_DefaultValue = 2700
+;;User_WarnMB_Range = {int, 2000, 3200}
+User_DangerMB = 2780
+;;User_DangerMB_Name = Red from (MB)
+;;User_DangerMB_DefaultValue = 2780
+;;User_DangerMB_Range = {int, 2000, 3200}
+User_ShowRead = true
+;;User_ShowRead_Name = Show SD reads
+;;User_ShowRead_Description = MB/s the game reads from the SD (loading, streaming). Needs SaltyNX.
+;;User_ShowRead_DefaultValue = true
+User_ShowTemp = false
+;;User_ShowTemp_Name = Show SoC temperature
+;;User_ShowTemp_DefaultValue = false
+User_ShowGPU = true
+;;User_ShowGPU_Name = Show GPU
+;;User_ShowGPU_DefaultValue = true
+User_ShowFPS = true
+;;User_ShowFPS_Name = Show FPS
+;;User_ShowFPS_Description = Needs SaltyNX.
+;;User_ShowFPS_DefaultValue = true
+User_HandheldFontSize = 18
+;;User_HandheldFontSize_Name = Font size
+;;User_HandheldFontSize_DefaultValue = 18
+;;User_HandheldFontSize_Range = {font, 8, 18}
+User_DockedFontSize = 18
+;;User_DockedFontSize_Name = Docked font size
+;;User_DockedFontSize_DefaultValue = 18
+;;User_DockedFontSize_Range = {font, 8, 18}
+
+CatColor = COLOR{0xFCCF}
+TextColor = COLOR{0xFFFF}
+WarnColor = COLOR{0xFE4F}
+DangerColor = COLOR{0xF55F}
+BoxColor = COLOR{0x1117}
+
+AppCat = IETF{"APP"}
+PeakCat = IETF{"PEAK"}
+IETF_LOCALE{PeakCat, "ES-419", "PICO"}
+IETF_LOCALE{PeakCat, "ES-ES", "PICO"}
+
+COMMON_MARGIN = 0
+BackgroundColor = COLOR{0x0000}
+HeaderText = false
+FooterText = false
+; Fixed at the top right, where the game shows little. (Movable with a
+; self-measured strip let it slide past the edge.)
+Movable = false
+UseCustomExitCombo = true
+EnableControls = false
+
+EnableCPU = true
+EnableGPU = true
+EnableRAM = true
+EnableGame = true
+EnableBoard = true
+
+; State kept between frames (':' keys). Reset by closing and reopening the mode,
+; or by holding ZL + ZR + D-pad down for a moment.
+PeakMB: 0
+PeakH: 0
+PeakM: 0
+PeakS: 0
+
+AppText: {"%.0f/%.0f MB", RAM_UsedApplicationMB_float, RAM_TotalApplicationMB_float}
+PeakText: {"%.0f (%02d:%02d:%02d)", PeakMB, PeakH, PeakM, PeakS}
+CpuText: {"%.0f/%.0f/%.0f%%", CPU_Core0Load_double, CPU_Core1Load_double, CPU_Core2Load_double}
+GpuText: {"%hu%%", GPU_Load_int / 10}
+FpsText: {"%2.1f", Game_FpsAvg_float}
+ReadText: {"%.1f MB/s", Game_ReadSpeedPerSecond_float / 1048576}
+TempText: {"%.0f\u00B0C", Board_SocTemperatureCelsius_float}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Start:
+#if $System_IsDocked
+	VAR{fontsize, User_DockedFontSize}
+#else
+	VAR{fontsize, User_HandheldFontSize}
+#endif
+
+VAR{ram, RAM_UsedApplicationMB_float}
+#if $System_KeysHeld_int == System_Key_ZL + System_Key_ZR + System_Key_Down
+	VAR{PeakMB, 0}
+#endif
+#if $ram > PeakMB
+	VAR{PeakMB, ram}
+	VAR{PeakH, System_ClockHour_int}
+	VAR{PeakM, System_ClockMinute_int}
+	VAR{PeakS, System_ClockSecond_int}
+#endif
+
+VAR{ramColor, TextColor}
+#if $ram >= User_DangerMB
+	VAR{ramColor, DangerColor}
+#elif $ram >= User_WarnMB
+	VAR{ramColor, WarnColor}
+#endif
+VAR{peakColor, TextColor}
+#if $PeakMB >= User_DangerMB
+	VAR{peakColor, DangerColor}
+#elif $PeakMB >= User_WarnMB
+	VAR{peakColor, WarnColor}
+#endif
+
+; Fixed-width slots so the strip doesn't jump around.
+GET_DIMENSIONS{slotApp, fontsize, true, "APP 0000/0000 MB  "}
+GET_DIMENSIONS{slotPeak, fontsize, true, "PEAK 0000 (00:00:00)  "}
+GET_DIMENSIONS{slotCpu, fontsize, true, "CPU 100/100/100%  "}
+GET_DIMENSIONS{slotGpu, fontsize, true, "GPU 100%  "}
+GET_DIMENSIONS{slotFps, fontsize, true, "FPS 60.0  "}
+GET_DIMENSIONS{slotRead, fontsize, true, "SD 99.9 MB/s  "}
+GET_DIMENSIONS{slotTemp, fontsize, true, "SoC 99\u00B0C"}
+VAR{total, slotApp.x + slotPeak.x + slotCpu.x}
+#if $User_ShowGPU
+	VAR{total, total + slotGpu.x}
+#endif
+#if $User_ShowFPS and $Game_IsGameRunning
+	VAR{total, total + slotFps.x}
+#endif
+#if $User_ShowRead and $Game_IsGameRunning
+	VAR{total, total + slotRead.x}
+#endif
+#if $User_ShowTemp
+	VAR{total, total + slotTemp.x}
+#endif
+VAR{x, LayerWidth - total - 10}
+BOX{x - 8, 0, total + 16, fontsize + 2, BoxColor}
+
+VAR{label, IETF_GET{AppCat} + " "}
+GET_DIMENSIONS{d, fontsize, true, label}
+TEXT{x, fontsize, fontsize, CatColor, true, label}
+TEXT{x + d.x, fontsize, fontsize, ramColor, true, AppText}
+VAR{x, x + slotApp.x}
+
+VAR{label, IETF_GET{PeakCat} + " "}
+GET_DIMENSIONS{d, fontsize, true, label}
+TEXT{x, fontsize, fontsize, CatColor, true, label}
+TEXT{x + d.x, fontsize, fontsize, peakColor, true, PeakText}
+VAR{x, x + slotPeak.x}
+
+GET_DIMENSIONS{d, fontsize, true, "CPU "}
+TEXT{x, fontsize, fontsize, CatColor, true, "CPU "}
+TEXT{x + d.x, fontsize, fontsize, TextColor, true, CpuText}
+VAR{x, x + slotCpu.x}
+
+#if $User_ShowGPU
+	GET_DIMENSIONS{d, fontsize, true, "GPU "}
+	TEXT{x, fontsize, fontsize, CatColor, true, "GPU "}
+	TEXT{x + d.x, fontsize, fontsize, TextColor, true, GpuText}
+	VAR{x, x + slotGpu.x}
+#endif
+
+#if $User_ShowFPS and $Game_IsGameRunning
+	#if Game_FpsAvg_float < 254 and Game_FpsAvg_float >= 0
+		GET_DIMENSIONS{d, fontsize, true, "FPS "}
+		TEXT{x, fontsize, fontsize, CatColor, true, "FPS "}
+		TEXT{x + d.x, fontsize, fontsize, TextColor, true, FpsText}
+	#endif
+	VAR{x, x + slotFps.x}
+#endif
+
+#if $User_ShowRead and $Game_IsGameRunning
+	#if Game_ReadSpeedPerSecond_float >= 0
+		GET_DIMENSIONS{d, fontsize, true, "SD "}
+		TEXT{x, fontsize, fontsize, CatColor, true, "SD "}
+		TEXT{x + d.x, fontsize, fontsize, TextColor, true, ReadText}
+	#endif
+	VAR{x, x + slotRead.x}
+#endif
+
+#if $User_ShowTemp
+	GET_DIMENSIONS{d, fontsize, true, "SoC "}
+	TEXT{x, fontsize, fontsize, CatColor, true, "SoC "}
+	TEXT{x + d.x, fontsize, fontsize, TextColor, true, TempText}
+#endif

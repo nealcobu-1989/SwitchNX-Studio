@@ -1,0 +1,8 @@
+ES: Las inis limpias de TU consola, para empezar proyectos desde cero:
+    Skyrim.ini, Skyrim_en.ini (y los de otros idiomas si los usas) de romfs,
+    y Skyrim_aoc.ccc (Anniversary Edition). Sácalas de tu copia del juego,
+    por ejemplo con DBI. No las bajes de internet ni las compartas.
+EN: The clean inis from YOUR console, to start projects from scratch: Skyrim.ini,
+    Skyrim_en.ini (and other languages if you use them) from romfs, and
+    Skyrim_aoc.ccc (Anniversary Edition). Take them from your own copy of the game,
+    for example with DBI. Don't download or share them.

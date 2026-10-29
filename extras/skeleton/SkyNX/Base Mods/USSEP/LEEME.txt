@@ -1,0 +1,8 @@
+ES: Opcional. El Unofficial Skyrim Special Edition Patch ya convertido para Switch
+    (el port de KokaNX), con sus tres variantes en estas carpetas: All_CC, No_CC y
+    SurvivalMode. Al empezar un proyecto la app ofrece instalarlo. Respeta los
+    permisos del USSEP: no lo vuelvas a publicar.
+EN: Optional. The Unofficial Skyrim Special Edition Patch already converted for
+    Switch (KokaNX's port), its three variants in these folders: All_CC, No_CC and
+    SurvivalMode. Starting a project, the app offers to install it. Respect USSEP's
+    permissions: don't republish it.

@@ -1,0 +1,38 @@
+Herramientas externas / External tools
+======================================
+
+ES: Pon aquí las herramientas (los .exe sueltos, sin subcarpetas; las que son
+programas completos, en su propia subcarpeta). En la app: Ajustes » Ver todo tu equipo
+muestra qué encontró y para qué sirve cada una. Abrir y revisar packs no necesita
+ninguna; convertir mods de PC sí.
+
+EN: Put the tools here (single .exe files loose; full programs in a subfolder of their
+own). In the app, Settings » See all your gear shows what it found and what each one is for.
+Opening and checking packs needs none of them; converting PC mods does.
+
+  texconv.exe                 Texturas / textures. DirectXTex, MIT.
+                              https://github.com/microsoft/DirectXTex/releases
+                              (también va en el zip "tools" del release / also in the release's tools zip)
+  VGAudioCli.exe + VGAudio.dll   Audio de Switch (Opus y .mcadpcm) / Switch audio.
+                              Usa la versión del Skyrim NX Toolkit, otras no sirven.
+                              Use the Skyrim NX Toolkit's build; others don't work. MIT.
+                              https://github.com/Lord-Akkrand/Skyrim-NX-Toolkit
+                              (también en el zip "tools" del release / also in the release's tools zip)
+  ffmpeg.exe                  Lee audio de PC / reads PC audio. https://ffmpeg.org/download.html
+  serde-hkx\hkxc.exe          Comportamientos y esqueletos de PC de 64 bits / 64-bit PC behaviors.
+                              Nexus Mods, Skyrim SE, mod 126214
+  HavokBehaviorPostProcess.exe   Del Creation Kit (Steam), carpeta Tools\HavokBehaviorPostProcess.
+                              No se puede redistribuir / can't be redistributed.
+  Nemesis\                    Mods con animaciones nuevas / new animations. Nexus SE mod 60033
+  7-Zip                       Para .rar / for .rar downloads. https://www.7-zip.org
+  SSEEdit\, zEdit\, NifSkope\, BAE\, Cathedral Assets Optimizer\
+                              Programas externos que la app abre / outside programs the app opens.
+                              SSEEdit: Nexus SE 164. zEdit: https://github.com/z-edit/zedit
+                              NifSkope: https://github.com/niftools/nifskope
+                              BAE: Nexus SE 974. CAO: Nexus SE 23316
+
+  NvnTexpkg (opcional / optional): texturas en formato nativo de Switch. Es parte del
+  SDK de Nintendo: este proyecto no la incluye ni dice dónde conseguirla. Sin ella las
+  texturas quedan en DDS (DXT5), que la Switch lee bien.
+  It's part of Nintendo's SDK: this project doesn't include it or say where to get it.
+  Without it textures stay DDS (DXT5), which the Switch reads fine.

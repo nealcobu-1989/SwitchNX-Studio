@@ -1,0 +1,10 @@
+ES: Los archivos del juego de TU consola, de romfs\Data: los BSA (Skyrim - *.bsa,
+    cc*.bsa) y los plugins (.esm, .esl). Con ellos el Doctor sabe si un script,
+    malla o textura de verdad falta o si ya lo trae el juego, y xEdit puede abrir
+    los proyectos. Cuando la app arma su lista del juego (una sola vez), puedes
+    borrar los BSA menos "Skyrim - Interface.bsa"; los plugins se quedan.
+EN: The game's files from YOUR console's romfs\Data: the BSAs (Skyrim - *.bsa,
+    cc*.bsa) and the plugins (.esm, .esl). With them the Doctor can tell a script,
+    mesh or texture that's really missing from one the game already has, and xEdit
+    can open projects. Once the app builds its game list (only once) you can delete
+    the BSAs except "Skyrim - Interface.bsa"; keep the plugins.

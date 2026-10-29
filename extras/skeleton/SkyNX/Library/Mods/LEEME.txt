@@ -1,0 +1,4 @@
+ES: Mods sueltos tal como los bajas (zip, 7z, rar o carpetas). Desde aquí los
+    arrastras a la app.
+EN: Loose mods as you download them (zip, 7z, rar or folders). Drag them from here
+    into the app.
