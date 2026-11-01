@@ -248,6 +248,19 @@ def _full_ini(d: dict, ini_name: str, key: str, cur: list[str]) -> list[str]:
     return out
 
 
+def shared_bsas(pack: Pack, rid: str, bsas: list[str], d: dict | None = None) -> set[str]:
+    """Lower-case names of `bsas` that another mod still going also lists."""
+    from .builder import load_mods
+    d = d if d is not None else (load(pack.root) or {"excluded": {}})
+    low = {b.lower() for b in bsas}
+    out = set()
+    for mid, rec in load_mods(pack).items():
+        if mid == rid or mid in d.get("excluded", {}) or not isinstance(rec, dict):
+            continue
+        out |= low & {b.lower() for b in rec.get("bsas") or []}
+    return out
+
+
 def exclude(pack: Pack, row: dict, tx, force: bool = False) -> dict:
     """Mark a mod (a Mods-page row: id, name, plugins, bsas) as "doesn't go"."""
     d = load(pack.root)
@@ -260,8 +273,13 @@ def exclude(pack: Pack, row: dict, tx, force: bool = False) -> dict:
     users = users_of(pack, plugins)
     if users and not force:
         return {"changed": False, "refused": True, "users": users}
+    # an archive other mods that still go share (a joined suite) stays where it is
+    shared = shared_bsas(pack, rid, bsas, d)
+    bsas = [b for b in bsas if b.lower() not in shared]
+    size = (row.get("size") or 0) - sum((pack.data_dir / b).stat().st_size for b in row.get("bsas") or []
+                                        if b.lower() in shared and (pack.data_dir / b).exists())
     rec = {"name": row.get("name") or rid, "kind": row.get("kind"), "plugins": plugins, "bsas": bsas,
-           "size": row.get("size") or 0, "list": _list_positions(pack, plugins),
+           "shared": sorted(shared), "size": max(size, 0), "list": _list_positions(pack, plugins),
            "ini": _ini_positions(pack, bsas), "when": time.strftime("%Y-%m-%d %H:%M:%S"),
            # the whole order as it was, so putting mods back in any order keeps it
            "list_snapshot": _full_list(d, C.parse_ccc(pack.list_path.read_bytes()).entries) if pack.list_path else [],

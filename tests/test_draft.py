@@ -353,3 +353,48 @@ def test_undo_never_writes_into_a_linked_file(tmp_path):
         raise RuntimeError("boom")
     assert snapshot(src) == before
     assert not os.path.samefile(target, src.data_dir / "Tiny.esp")    # it got its own file
+
+
+def test_doesnt_go_keeps_a_suite_other_mods_still_use(tmp_path):
+    """Two mods whose files were joined into one archive: taking one out must not
+    take the archive (and the other mod's files) with it."""
+    import json
+    from skynx.ini import parse_ini
+    src = avner_like(tmp_path / "src")
+    data = src.data_dir
+    fake_plugin(data / "Other.esp", ["Skyrim.esm"])
+    (data / "SuiteZ.bsa").write_bytes(EMPTY_BSA)
+    src.list_path.write_bytes(src.list_path.read_bytes() + b"Other.esp\r\n")
+    for ini in src.ini_paths:
+        raw = ini.read_bytes()
+        if parse_ini(raw).get("Archive", "sResourceArchiveList2") is not None:
+            cur = parse_ini(raw).archive_list("sResourceArchiveList2")
+            ini.write_bytes(set_archive_list(raw, "sResourceArchiveList2", cur + ["SuiteZ.bsa"]))
+    mods = {"Mod A": {"plugins": ["Big Mod.esp"], "bsas": ["Big Mod.bsa", "SuiteZ.bsa"]},
+            "Mod B": {"plugins": ["Other.esp"], "bsas": ["SuiteZ.bsa"]}}
+    (Path(src.root) / ".skynx").mkdir(exist_ok=True)
+    (Path(src.root) / ".skynx" / "mods.json").write_text(json.dumps(mods))
+    d = DR.start_from_pack(Pack.open(src.root), tmp_path / "Drafts" / "Mine", "Mine")
+    before = snapshot(d)
+
+    def in_ini(p, name):
+        return any(name.lower() in [b.lower() for b in i.archive_list("sResourceArchiveList2")]
+                   for i in p.inis if i.get("Archive", "sResourceArchiveList2") is not None)
+
+    row = next(r for r in mods_view(d) if r["id"] == "Mod A")
+    with Transaction(d.root, "A out") as tx:
+        DR.exclude(d, row, tx)
+    d = Pack.open(d.root)
+    assert in_ini(d, "SuiteZ.bsa")                                   # Mod B still needs it
+    assert "suitez.bsa" not in DR.excluded_files(d.root)             # and it still gets packed
+    assert "big mod.bsa" in DR.excluded_files(d.root)
+    row = next(r for r in mods_view(d) if r["id"] == "Mod B")
+    with Transaction(d.root, "B out") as tx:
+        DR.exclude(d, row, tx)
+    d = Pack.open(d.root)
+    assert not in_ini(d, "SuiteZ.bsa")                               # nobody left: it goes out
+    for rid in ("Mod B", "Mod A"):
+        with Transaction(d.root, "in") as tx:
+            DR.include(d, rid, tx)
+        d = Pack.open(d.root)
+    assert snapshot(d) == before

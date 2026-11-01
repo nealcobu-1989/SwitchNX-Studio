@@ -736,3 +736,23 @@ def test_shorten_long_bsa_names_in_a_full_ini(tmp_path):
     assert all(n in recs for n in news)
     undo(pack.root, list_history(pack.root)[0]["id"])
     assert all((Pack.open(pack.root).data_dir / b).exists() for b in longs)
+
+
+def test_short_bsa_names_never_take_a_load_order_plugins_name(tmp_path):
+    """'SkyrimFOM.bsa' must not become 'Skyrim.bsa' (Skyrim.esm would load it a
+    second time by name), nor the name of a plugin in the load list, even a
+    '#' one that can be switched back on."""
+    from skynx.bsafix import plan_ini_shorten
+    pack = Pack.open(create_project(tmp_path / "pk", "AE", INIS, "none"))
+    for i, b in enumerate(["SkyrimFOM.bsa", "WintersunXY.bsa"]):
+        m = tmp_path / f"m{i}"
+        m.mkdir()
+        make_bsa(m / b, {f"meshes\\\\b{i}.nif": b"x" * 10})
+        add_mod(pack, m)
+    pack = Pack.open(pack.root)
+    pack.list_path.write_bytes(pack.list_path.read_bytes() + b"#Winter.esp\r\n")
+    pack = Pack.open(pack.root)
+    ren = dict(plan_ini_shorten(pack, "sResourceArchiveList"))
+    assert set(ren) == {"SkyrimFOM.bsa", "WintersunXY.bsa"}
+    news = {b.lower() for b in ren.values()}
+    assert not news & {"skyrim.bsa", "winter.bsa"}

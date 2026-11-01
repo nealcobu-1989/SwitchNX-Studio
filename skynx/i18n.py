@@ -140,6 +140,18 @@ MSG = {
     "names-foreign": {
         "en": ("{name}: {n} names in another language", "Like \"{example}\": the mod comes from a translated upload, and changing a record copied its name too, so the game shows it that way. For {fixable} of them the game's own name can be put back; only the names change. Its own new records have no game name to go back to."),
         "es": ("{name}: {n} nombres en otro idioma", "Como \"{example}\": el mod viene de una versión traducida y, al cambiar un registro, copió también su nombre, así que el juego lo muestra así. A {fixable} de ellos se les puede devolver el nombre del juego; solo cambian los nombres. Sus registros nuevos no tienen un nombre del juego al cual volver.")},
+    "text-baked-error": {
+        "en": ("{name}: {n} texts read \"<Error: No strings file...>\"", "The patch was saved in an editor that hadn't loaded the game's texts, so it copied the error message instead of the text: the game shows it as is (a quest objective, a name). For {fixable} of them the game's own text can be put back; only those texts change."),
+        "es": ("{name}: {n} textos dicen \"<Error: No strings file...>\"", "El parche se guardó en un editor que no tenía cargados los textos del juego, así que copió el mensaje de error en lugar del texto: el juego lo muestra tal cual (un objetivo de misión, un nombre). A {fixable} de ellos se les puede devolver el texto del juego; solo cambian esos textos.")},
+    "sd-open-files-info": {
+        "en": ("{n} mod files open from the SD", "{plugins} plugins and {bsas} BSAs of mods. Atmosphère serves each one from the SD and the game keeps them open; Creation Club and the game's own files don't count. Above about {warn}, texts the game reads when they show (message boxes, dialogue) started failing in tests."),
+        "es": ("{n} archivos de mods abiertos desde la SD", "{plugins} plugins y {bsas} BSAs de mods. Atmosphère sirve cada uno desde la SD y el juego los mantiene abiertos; los del Creation Club y los del juego no cuentan. En pruebas, por encima de unos {warn} empezaron a fallar textos que el juego lee al mostrarlos (letreros, diálogos).")},
+    "sd-open-files-aviso": {
+        "en": ("{n} mod files open from the SD: close to the limit", "{plugins} plugins and {bsas} BSAs of mods. In tests, above about {warn} some message boxes came out empty, NPCs didn't talk and a sound that failed to open crashed the game. Join BSAs (Join mods into one BSA), merge small patches (Join plugins) or leave out empty plugins and mods you don't use."),
+        "es": ("{n} archivos de mods abiertos desde la SD: cerca del límite", "{plugins} plugins y {bsas} BSAs de mods. En pruebas, por encima de unos {warn} algunos letreros salieron vacíos, NPCs no hablaron y un sonido que no se pudo abrir cerró el juego. Junta BSAs (Juntar mods en un BSA), une parches pequeños (Juntar plugins) o saca plugins vacíos y mods que no uses.")},
+    "sd-open-files-critico": {
+        "en": ("{n} mod files open from the SD: too many", "{plugins} plugins and {bsas} BSAs of mods. With this many, texts read on the fly fail (race descriptions, message boxes, dialogue) and the game can crash when a file fails to open. Join BSAs, merge small patches, or take mods out until it's near {warn}."),
+        "es": ("{n} archivos de mods abiertos desde la SD: demasiados", "{plugins} plugins y {bsas} BSAs de mods. Con tantos, fallan los textos que se leen al vuelo (descripciones de razas, letreros, diálogos) y el juego puede cerrarse cuando un archivo no se abre. Junta BSAs, une parches pequeños o saca mods hasta acercarte a {warn}.")},
     "plugin-dummy-keep": {
         "en": ("Empty plugin: {name} (leave it as it is)", "It has no records and only loads its BSA. Moving the BSA to the ini would free {bytes} bytes of the .ccc, but {n} of its files would change who wins them: the ini loads first, so mods loading before {name} would cover them (and its scripts would start winning). Below, each file and who would win it."),
         "es": ("Plugin vacío: {name} (déjalo así)", "No tiene registros y solo carga su BSA. Pasar el BSA al ini liberaría {bytes} bytes del .ccc, pero {n} de sus archivos cambiarían de ganador: lo del ini carga antes, así que los mods que cargan antes de {name} los taparían (y sus scripts empezarían a ganar). Abajo, cada archivo y quién lo ganaría.")},
@@ -297,6 +309,9 @@ MSG = {
     "req-anim-framework": {
         "en": ("{name} has animations for {kinds}", "{n} files are for animation frameworks that need SKSE ({kinds}). Switch has no SKSE, so those animations won't play; they only take space."),
         "es": ("{name} trae animaciones para {kinds}", "{n} archivos son para sistemas de animación que necesitan SKSE ({kinds}). Switch no tiene SKSE, así que esas animaciones no se van a ver; solo ocupan espacio.")},
+    "req-behavior-missing": {
+        "en": ("{name}: the behaviors call files that don't load", "The generated 0_master.hkx calls behavior files that aren't in any BSA that loads, in Data or in the game. Without them nobody can animate and everyone stands in T-pose. Usually a mod the behaviors were generated with was switched off or taken out: generate the behaviors again."),
+        "es": ("{name}: los comportamientos llaman archivos que no cargan", "El 0_master.hkx generado llama archivos de comportamiento que no están en ningún BSA que cargue, ni en Data, ni en el juego. Sin ellos nadie puede animarse y todos quedan en T-pose. Casi siempre es porque se apagó o se sacó un mod con el que se generaron: vuelve a generar los comportamientos.")},
     "req-behavior-conflict": {
         "en": ("{name} replaces {n} behavior files", "These behavior files also come in {others} with different content. Only the last one loaded counts, the one in {name}. On PC FNIS or Nemesis would combine them; on Switch they can't be merged, so animations from the other mods may not play."),
         "es": ("{name} reemplaza {n} archivos de comportamiento", "Estos archivos de comportamiento también vienen en {others} con otro contenido. Solo cuenta el último que carga, el de {name}. En PC FNIS o Nemesis los combinan; en Switch no se pueden unir, así que las animaciones de los otros mods pueden no verse.")},
@@ -381,6 +396,7 @@ LABEL = {
     "fix-cc-not-in-game": {"en": "Take out the {n} lines", "es": "Quitar las {n} líneas"},
     "fix-drop-skse": {"en": "Take out the {n} SKSE scripts", "es": "Sacar los {n} scripts de SKSE"},
     "fix-off-without-file": {"en": "Take out the {n} lines", "es": "Quitar las {n} líneas"},
+    "fix-texts-restore": {"en": "Use the game's texts ({n})", "es": "Usar los textos del juego ({n})"},
     "fix-names": {"en": "Use the game's names ({n})", "es": "Usar los nombres del juego ({n})"},
     "fix-add-cc": {"en": "Add {to}", "es": "Agregar {to}"},
     "fix-add-cc-n": {"en": "Add the {n} to the list", "es": "Agregar los {n} a la lista"},
@@ -447,6 +463,7 @@ PREVIEW = {
     "pv-memory-back": {"en": "If T-poses or animation stutters show up, put them back in sArchiveToLoadInMemoryList (or undo this from the history).", "es": "Si aparecen T-poses o tirones en las animaciones, vuelve a ponerlos en sArchiveToLoadInMemoryList (o deshaz este cambio desde el historial)."},
     "pv-font-loose": {"en": "Copy Interface\\FontConfig.txt out of {bsa}, loose to Data\\Interface", "es": "Copiar Interface\\FontConfig.txt de {bsa}, suelto a Data\\Interface"},
     "pv-list-shorten": {"en": "Each one also updates the plugins that use it as a master, its BSAs, voices, faces, SEQ and scripts, and the load list.", "es": "Cada uno actualiza además los plugins que lo usan como master, sus BSA, voces, caras, SEQ y scripts, y la lista de carga."},
+    "pv-texts": {"en": "{file}: {n} texts go back to the game's (only those texts change):", "es": "{file}: {n} textos vuelven a los del juego (solo cambian esos textos):"},
     "pv-names": {"en": "{file}: {n} names go back to the game's (only the names change):", "es": "{file}: {n} nombres vuelven a los del juego (solo cambian los nombres):"},
     "pv-master-retarget": {"en": "{file}: master {old} → {new} (renamed in this pack; only the name in its header changes)", "es": "{file}: master {old} → {new} (renombrado en este pack; solo cambia el nombre en su encabezado)"},
     "pv-hedr": {"en": "{file}: header version {old} → {new} (only those 4 bytes change)", "es": "{file}: versión del encabezado {old} → {new} (solo cambian esos 4 bytes)"},

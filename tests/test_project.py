@@ -179,6 +179,21 @@ def test_both_sides_changed_keeps_the_hand_edit_aside(tmp_path, monkeypatch):
     assert kept and kept[0].read_bytes() == b"hand\r\n"
 
 
+def test_a_mirror_file_that_only_changed_date_is_not_a_conflict(tmp_path, monkeypatch):
+    """Packing on Windows touched Base/'s inis and load list without changing a
+    byte; the next sync set them aside as hand edits (Oct 2026)."""
+    monkeypatch.setattr(os, "link", lambda *a, **k: (_ for _ in ()).throw(OSError("x")))
+    src, before, pk = make(tmp_path)
+    with Transaction(pk.root, "list") as tx:
+        tx.write_bytes(pk.list_path, pk.list_path.read_bytes() + b"Extra.esp\r\n")
+    base_ccc = pk.root / "Base" / "Skyrim_aoc.ccc"
+    base_ccc.write_bytes(pk.list_path.read_bytes())          # same bytes, new date
+    r = P.sync(Pack.open(pk.root))
+    assert r["conflicts"] == [] and r["pulled"] == []
+    assert not (pk.root / ".skynx" / "mirror-conflicts").exists()
+    assert base_ccc.read_bytes() == pk.list_path.read_bytes()
+
+
 def test_build_replaces_only_its_own_output(tmp_path):
     src, before, pk = make(tmp_path)
     (pk.root / "Switch").mkdir()

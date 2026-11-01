@@ -283,6 +283,21 @@ def _bare(e: str) -> str:
     return e.lstrip("#").strip()
 
 
+def _generated_owners(mid: str, recs: dict, listed: dict, pack: Pack) -> list[str]:
+    """The generated behaviors (a mod without plugins) belong to the plugins
+    of the mods they were generated from: with all of those off, their BSA
+    would only make everyone T-pose."""
+    from . import behaviors as BH
+    if mid != BH.GEN_ID:
+        return []
+    out: list[str] = []
+    for src in BH.load_state(pack).get("mods") or []:
+        for p in (recs.get(src) or {}).get("plugins", []):
+            if p.lower() in listed and p not in out:
+                out.append(p)
+    return out
+
+
 def ini_owners(pack: Pack) -> dict[str, tuple[str, list[str]]]:
     """{bsa lower: (bsa name, [plugins it belongs to])} for the BSAs the inis
     list that belong to some plugin of the load list. The game's own BSAs
@@ -295,8 +310,11 @@ def ini_owners(pack: Pack) -> dict[str, tuple[str, list[str]]]:
             for b in ini.archive_list(key):
                 in_inis.setdefault(b.lower(), b)
     out: dict[str, tuple[str, list[str]]] = {}
-    for rec in load_mods(pack).values():
+    recs = load_mods(pack)
+    for mid, rec in recs.items():
         plugins = [p for p in rec.get("plugins", []) if p.lower() in listed]
+        if not plugins:
+            plugins = _generated_owners(mid, recs, listed, pack)
         if not plugins:
             continue
         for b in rec.get("bsas", []):

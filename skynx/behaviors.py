@@ -162,8 +162,14 @@ def mods_with_sources(pack: Pack) -> list[dict]:
     recs = load_mods(pack)
     out = []
     skip = _excluded(pack) | {GEN_ID}
+    # switched off with '#': its plugin doesn't load, so its animations would be
+    # wired into the behaviors without the files that carry them (T-pose)
+    off = {e[1:].strip().lower() for e in (pack.list_entries or []) if e.startswith("#")}
     for mid, rec in recs.items():
         if mid in skip:
+            continue
+        plugins = [p.lower() for p in rec.get("plugins") or []]
+        if plugins and all(p in off for p in plugins):
             continue
         d = sources_dir(pack, mid)
         if d.is_dir():
@@ -237,6 +243,33 @@ def _snapshot(data: Path) -> dict:
     return out
 
 
+# Where Nemesis keeps the game's own behavior files, and where it looks for them
+_CACHED = ("cached_behaviors", "SSE")
+_BEHAVIORS = ("meshes", "actors", "character", "behaviors")
+_BEHAVIORS_1ST = ("meshes", "actors", "character", "_1stperson", "behaviors")
+
+
+def seed_vanilla_behaviors(eng: Path, data: Path) -> int:
+    """Nemesis stops with "ERROR(1210): Vital behavior file cannot be found"
+    when Data has no 0_master.hkx and the rest: in Skyrim they come from the
+    game's BSA, and the work folder has none. Its own download keeps the SE
+    ones in Nemesis_Engine\\cached_behaviors\\SSE; they go in first, so a
+    mod that brings its own still wins. Untouched, they aren't collected
+    (the snapshot is taken after this). Returns how many files."""
+    src = eng.joinpath(*_CACHED)
+    n = 0
+    for sub, dest in ((src, data.joinpath(*_BEHAVIORS)), (src / "_1stperson", data.joinpath(*_BEHAVIORS_1ST))):
+        if not sub.is_dir():
+            continue
+        for f in sub.glob("*.hkx"):
+            target = dest / f.name
+            if not target.exists():
+                dest.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, target)
+                n += 1
+    return n
+
+
 def prepare(pack: Pack, tools) -> dict:
     """Make the work folder: Nemesis (a copy), every mod's sources in order,
     the empty SkyrimSE.exe and the nemesis.ini that points there."""
@@ -270,6 +303,7 @@ def prepare(pack: Pack, tools) -> dict:
     lines = ini.read_text(encoding="utf-8", errors="replace").splitlines() if ini.is_file() else []
     lines = [x for x in lines if not x.lower().startswith("skyrimdatadirectory=")]
     ini.write_text("\r\n".join([f"SkyrimDataDirectory={data}\\"] + lines) + "\r\n", encoding="utf-8")
+    seed_vanilla_behaviors(eng, data)
     for m in mods:
         shutil.copytree(m["dir"], data, dirs_exist_ok=True)
     snap = _snapshot(data)

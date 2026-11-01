@@ -1269,9 +1269,13 @@ class Api:
                     ml = loot.load_masterlist(ml_path)
                     sg = loot.suggest(self._pack, ml, aliases=self._aliases(),
                                       userlist=loot.load_userlist(ul_path))
-                    if sg.moves:
-                        out.append({"kind": "loot", "n": len(sg.moves),
-                                    "names": [m.name for m in sg.moves[:6]]})
+                    # a plugin LOOT doesn't know (no rule, no category chosen) is only a
+                    # guess: don't ask to re-sort for it (a merge of ours, a mod from a pack)
+                    unk = {u["name"].lower() for u in sg.unknown}
+                    moves = [m for m in sg.moves if m.name.lower() not in unk]
+                    if moves:
+                        out.append({"kind": "loot", "n": len(moves),
+                                    "names": [m.name for m in moves[:6]]})
                 except Exception:  # noqa: BLE001
                     out.append({"kind": "loot_never"})
             tick("Doctor")

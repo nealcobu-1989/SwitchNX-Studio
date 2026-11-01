@@ -188,6 +188,9 @@ def preview(pack: Pack, fix: dict, lang: str = "en") -> dict:
         lines.append(t("pv-memory-back"))
     elif kind == "font_loose":
         lines.append(t("pv-font-loose", bsa=fix["bsa"]))
+    elif kind == "texts_restore":
+        lines.append(t("pv-texts", file=fix["plugin"], n=len(fix["texts"])))
+        lines += [f"  {x[3]}" for x in fix["texts"][:12]] + (["  …"] if len(fix["texts"]) > 12 else [])
     elif kind == "names_fix":
         lines.append(t("pv-names", file=fix["plugin"], n=len(fix["names"])))
         lines += [f"  {nm}" for _fid, nm in fix["names"][:12]] + (["  …"] if len(fix["names"]) > 12 else [])
@@ -341,6 +344,14 @@ def apply(pack: Pack, fix: dict, title: str | None = None, progress=None) -> dic
             dest = pack.data_dir.joinpath(*FN.LOOSE_REL)
             dest.parent.mkdir(parents=True, exist_ok=True)
             tx.write_bytes(dest, data)
+        elif kind == "texts_restore":
+            from .textfix import restore
+            h = pack.plugins.get(fix["plugin"].lower())
+            if not h:
+                raise FixError(f"{fix['plugin']} isn't in the pack anymore", f"{fix['plugin']} ya no está en el pack")
+            out, n = restore(h.path.read_bytes(), {(int(f), s, int(i)): txt for f, s, i, txt in fix["texts"]})
+            if n:
+                tx.write_bytes(h.path, out)
         elif kind == "names_fix":
             from .names import fix_names
             h = pack.plugins.get(fix["plugin"].lower())

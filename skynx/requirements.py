@@ -169,10 +169,87 @@ def is_behavior(path: str) -> bool:
     return name in ("0_master.hkx", "defaultmale.hkx", "defaultfemale.hkx") or name.endswith("project.hkx")
 
 
+_GEN_REF = re.compile(rb"(?i)behaviors\\((?:fnis|nemesis)_[^\\/\x00]{1,120}?\.hkx)")
+
+
+def behavior_refs_missing(loaded: list[tuple[str, BsaArchive]], loose: dict[str, Path] | None = None,
+                          game: Callable[[str], bytes | None] | None = None) -> list[tuple[str, list[str]]]:
+    """[(where the winning 0_master.hkx comes from, [missing paths])] for the
+    generated behavior files (FNIS_*/Nemesis_*) a 0_master.hkx calls that no
+    loaded archive, Data or the game has. The whole graph fails without them:
+    every character stands in T-pose."""
+    loose = loose or {}
+    have: set[str] = set(loose)
+    win: dict[str, tuple[str, object, BsaArchive | None]] = {}
+    for n, arc in loaded:
+        for e in arc.entries:
+            q = e.path.lower()
+            have.add(q)
+            if q.endswith("\\behaviors\\0_master.hkx"):
+                win[q] = (n, e, arc)
+    for q, fp in loose.items():
+        if q.endswith("\\behaviors\\0_master.hkx"):
+            win[q] = ("Data", fp, None)
+    out = []
+    for q, (n, e, arc) in sorted(win.items()):
+        try:
+            if arc is None:
+                raw = Path(e).read_bytes()
+            else:
+                with arc.path.open("rb") as f:
+                    raw = arc.read_file(e, f)
+        except Exception:  # noqa: BLE001
+            continue
+        base = q.rsplit("\\behaviors\\", 1)[0]
+        missing = []
+        for m in sorted({x.decode("latin-1").lower() for x in _GEN_REF.findall(raw)}):
+            p = f"{base}\\behaviors\\{m}"
+            if p not in have and not (game and game(p)):
+                missing.append(p)
+        if missing:
+            out.append((n, missing))
+    return out
+
+
+def game_behaviors(vanilla_dir) -> Callable[[str], bytes | None]:
+    """path (lower) -> the game's own copy of a behavior file, from the
+    console's vanilla BSAs; None when there's none (or no vanilla folder)."""
+    files: dict[str, tuple[Path, object]] | None = None
+
+    def get(path: str) -> bytes | None:
+        nonlocal files
+        if files is None:
+            files = {}
+            if vanilla_dir and Path(vanilla_dir).is_dir():
+                from .vanilla import bsa_folder
+                from .bsa import read_bsa
+                for b in sorted(bsa_folder(Path(vanilla_dir)).glob("*.bsa")):
+                    try:
+                        arc = read_bsa(b)
+                    except Exception:  # noqa: BLE001
+                        continue
+                    for e in arc.entries:
+                        if is_behavior(e.path.lower()):
+                            files.setdefault(e.path.lower(), (arc, e))
+        hit = files.get(path)
+        if not hit:
+            return None
+        arc, e = hit
+        try:
+            with arc.path.open("rb") as f:
+                return arc.read_file(e, f)
+        except Exception:  # noqa: BLE001
+            return None
+    return get
+
+
 def behavior_conflicts(loaded: list[tuple[str, BsaArchive]],
-                       loose: dict[str, Path] | None = None) -> list[dict]:
+                       loose: dict[str, Path] | None = None,
+                       game: Callable[[str], bytes | None] | None = None) -> list[dict]:
     """[{path, winner, losers}] for behavior files present in two or more of
-    the archives (first to last; loose files win over all) whose content differs."""
+    the archives (first to last; loose files win over all) whose content differs.
+    A losing copy identical to the game's own (`game`) loses nothing: a mod
+    that ships the vanilla file isn't counted."""
     owners: dict[str, list[tuple[int, object]]] = {}
     for i, (_n, arc) in enumerate(loaded):
         for e in arc.entries:
@@ -201,7 +278,11 @@ def behavior_conflicts(loaded: list[tuple[str, BsaArchive]],
                 continue
             try:
                 win = content(*hits[-1])
-                losers = [names[i] for i, e in hits[:-1] if content(i, e) != win]
+                losers = []
+                for i, e in hits[:-1]:
+                    c = content(i, e)
+                    if c != win and not (game and c == game(p)):
+                        losers.append(names[i])
             except Exception:  # noqa: BLE001
                 continue
             if losers:
@@ -346,6 +427,12 @@ def check(pack, deep: bool = True, vanilla: set[str] | None = None,
         if str(p) not in seen:
             seen.add(str(p))
             order.append((p.name, p))
+    try:                                    # BSAs SkyNX Mods drops (all their plugins off) don't load
+        from .console import ini_drops
+        drops = ini_drops(pack)
+    except Exception:  # noqa: BLE001
+        drops = set()
+    order = [(n, p) for n, p in order if n.lower() not in drops]
     loaded: list[tuple[str, BsaArchive]] = []
     for n, p in order:
         arc = get(p)
@@ -364,13 +451,17 @@ def check(pack, deep: bool = True, vanilla: set[str] | None = None,
 
     # e. behaviors (cheap: directories, plus the few files that collide)
     by_winner: dict[str, list[dict]] = {}
-    for c in behavior_conflicts(loaded, loose):
+    for c in behavior_conflicts(loaded, loose, game_behaviors(vanilla_dir)):
         by_winner.setdefault(c["winner"], []).append(c)
     for w, cs in by_winner.items():
         others = sorted({l for c in cs for l in c["losers"]})
         items, cap = _capped([f"{c['path']} ({', '.join(c['losers'])})" for c in cs])
         out.append(_f("req-behavior-conflict", "aviso", w,
                       {"name": w, "others": ", ".join(others), **cap}, items))
+
+    for w, missing in behavior_refs_missing(loaded, loose, game_behaviors(vanilla_dir)):
+        items, cap = _capped(missing)
+        out.append(_f("req-behavior-missing", "critico", w, {"name": w, **cap}, items))
 
     if not deep:
         return out

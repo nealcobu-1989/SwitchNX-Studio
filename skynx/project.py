@@ -370,6 +370,17 @@ def _stat(p: Path) -> list | None:
         return None
 
 
+def _same_bytes(a: Path, b: Path, limit: int = 64 << 20) -> bool:
+    """Same content (small files only: inis, the load list, plugins)."""
+    try:
+        sa, sb = a.stat(), b.stat()
+        if sa.st_size != sb.st_size or sa.st_size > limit:
+            return False
+        return a.read_bytes() == b.read_bytes()
+    except OSError:
+        return False
+
+
 def _same(a: Path, b: Path) -> bool:
     """The same file on disk (a hard link). Network drives that report no file
     ids would make every pair look the same: those never count."""
@@ -520,6 +531,8 @@ def sync(pack: Pack, progress=None) -> dict:
         if tgt.split("/")[-1].lower() == MOD_INFO and tgt.count("/") == 2:
             continue
         ws = _stat(wp)
+        if ws is not None and ws != ent.get("s") and _same_bytes(tp, wp):
+            continue                                  # only its date changed: nothing to keep aside
         if ws is None or ws != ent.get("s"):
             # the app changed or removed it meanwhile: its version stays, the hand edit is kept aside
             _aside(root, tgt, tp, move=ws is None)

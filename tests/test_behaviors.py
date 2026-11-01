@@ -61,6 +61,11 @@ def tools_with_nemesis(tmp_path):
     (eng / BH.NEMESIS_EXE).write_bytes(b"MZ")
     (eng / "nemesis.ini").write_text("SkyrimDataDirectory=C:\\old\\\nlanguage=english\n", encoding="utf-8")
     (eng / "PatchLog.txt").write_text("old run", encoding="utf-8")
+    cached = eng / "cached_behaviors" / "SSE"
+    (cached / "_1stperson").mkdir(parents=True)
+    (cached / "0_master.hkx").write_bytes(b"vanilla master")
+    (cached / "staggerbehavior.hkx").write_bytes(b"vanilla stagger")
+    (cached / "_1stperson" / "0_master.hkx").write_bytes(b"vanilla 1st")
     (eng.parent / "scripts").mkdir()
     (eng.parent / "scripts" / "FNIS.pex").write_bytes(b"pex")
     return replace(locate(FAKE), nemesis=eng)
@@ -166,6 +171,24 @@ def test_prepare_makes_the_work_folder(tmp_path):
     assert (tools.nemesis / "nemesis.ini").read_text(encoding="utf-8").startswith("SkyrimDataDirectory=C:\\old")
     assert BH.nemesis_log(pack) == {"exists": False, "done": False, "errors": []}
     assert BH.changed_files(pack) == []
+    # the game's own behaviors, from Nemesis' cache (it stops without 0_master.hkx)
+    beh = data / "meshes" / "actors" / "character" / "behaviors"
+    assert (beh / "0_master.hkx").read_bytes() == b"vanilla master"
+    assert (beh / "staggerbehavior.hkx").is_file()
+    assert (data / "meshes" / "actors" / "character" / "_1stperson" / "behaviors" / "0_master.hkx").is_file()
+
+
+def test_seeded_behaviors_never_replace_a_mods_own(tmp_path):
+    eng = tmp_path / "Nemesis_Engine"
+    (eng / "cached_behaviors" / "SSE").mkdir(parents=True)
+    (eng / "cached_behaviors" / "SSE" / "0_master.hkx").write_bytes(b"vanilla")
+    (eng / "cached_behaviors" / "SSE" / "1hm_behavior.hkx").write_bytes(b"vanilla")
+    data = tmp_path / "Data"
+    beh = data / "meshes" / "actors" / "character" / "behaviors"
+    beh.mkdir(parents=True)
+    (beh / "1hm_behavior.hkx").write_bytes(b"mod")
+    assert BH.seed_vanilla_behaviors(eng, data) == 1
+    assert (beh / "1hm_behavior.hkx").read_bytes() == b"mod" and (beh / "0_master.hkx").read_bytes() == b"vanilla"
 
 
 def test_collect_adds_switch_behaviors_as_a_mod(tmp_path):
@@ -201,6 +224,9 @@ def test_collect_adds_switch_behaviors_as_a_mod(tmp_path):
     assert per_ini(pack) and set(per_ini(pack)) == {1}
     st = BH.status(pack, tools)
     assert st["state"] == "ok" and st["files"] == 3
+    # on the console the set goes off with the mods it was made from
+    from skynx import console as CON
+    assert CON.ini_owners(pack)[BH.GEN_BSA.lower()][1] == ["FlowerTest.esp"]  # check
     assert not BH.work_dir(pack).exists()                                  # its copy of Nemesis is gone
     assert BH.DONE_MARK in Path(pack.root).joinpath(*BH.LOG).read_text(encoding="utf-8")
     # a second run replaces the set instead of adding another
@@ -251,3 +277,17 @@ def test_sources_travel_with_the_library_copy(tmp_path):
     mods = BH.mods_with_sources(other)
     assert [m["id"] for m in mods] == [rep.mod_id] and mods[0]["nemesis"] and mods[0]["lists"] == 1
     assert not list(other.data_dir.rglob("behavior-sources*"))            # not a loose file of the mod
+
+
+def test_a_mod_switched_off_doesnt_feed_the_behaviors(tmp_path):
+    """Generating with an off mod wires its behavior file into 0_master while the
+    file itself doesn't load: everyone T-poses (Flower Girls, Oct 2026)."""
+    from skynx import ccc as C
+    from skynx.pack import Pack
+    tc, mod = fnis_mod(tmp_path)
+    pack, _res = project_with(tmp_path, tc, mod)
+    assert len(BH.mods_with_sources(pack)) == 1
+    raw = pack.list_path.read_bytes()
+    line = next(e for e in C.parse_ccc(raw).entries if e.lower() == "flowertest.esp")
+    pack.list_path.write_bytes(C.edit_lines(raw, {line: "#" + line}))
+    assert BH.mods_with_sources(Pack.open(pack.root)) == []

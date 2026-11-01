@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 from skynx import records as REC  # noqa: E402
 from skynx import requirements as REQ  # noqa: E402
 from skynx import vanilla as V  # noqa: E402
+from skynx.bsa import read_bsa  # noqa: E402
 from skynx.audit import run_audit  # noqa: E402
 from skynx.bsa import write_bsa  # noqa: E402
 from skynx.builder import create_project  # noqa: E402
@@ -502,6 +503,45 @@ def test_behavior_conflict(tmp_path):
     assert REQ.is_behavior("meshes\\actors\\character\\characters female\\defaultfemale.hkx")
     assert REQ.is_behavior("meshes\\actors\\dragon\\dragonproject.hkx")
     assert not REQ.is_behavior("meshes\\actors\\character\\animations\\walk.hkx")
+
+
+def test_behavior_conflict_ignores_a_copy_of_the_games_own(tmp_path):
+    """USSEP for Switch ships the console's own 0_master.hkx: a generated set
+    that replaces it loses nothing, so it isn't a conflict."""
+    pack = new_pack(tmp_path, ["A.esp", "B.esp"])
+    d = data(pack)
+    beh = "meshes\\actors\\character\\behaviors\\"
+    vdir = tmp_path / "vanilla"
+    vdir.mkdir()
+    make_bsa(vdir / "Skyrim - Animations.bsa", {beh + "0_master.hkx": b"V" * 300})
+    for n, master in (("A", b"V" * 300), ("B", b"B" * 300)):
+        plugin(d / f"{n}.esp", [rec("STAT", 0x01000800, [])])
+        make_bsa(d / f"{n}.bsa", {beh + "0_master.hkx": master})
+    pack = Pack.open(pack.root)
+    assert len(found(pack, "req-behavior-conflict", deep=False)) == 1        # no vanilla folder: can't tell
+    loaded = [(n, read_bsa(d / n)) for n in ("A.bsa", "B.bsa")]
+    assert REQ.behavior_conflicts(loaded, None, REQ.game_behaviors(vdir)) == []
+    assert REQ.behavior_conflicts(loaded, None, REQ.game_behaviors(None))[0]["losers"] == ["A.bsa"]
+
+
+def test_generated_behaviors_that_call_a_file_that_doesnt_load(tmp_path):
+    """Flower Girls switched off after generating: 0_master.hkx still calls
+    FNIS_flowergirlsse_Behavior.hkx, which only came in its BSA. T-pose."""
+    pack = new_pack(tmp_path, ["Gen.esp", "FG.esp"])
+    d = data(pack)
+    beh = "meshes\\actors\\character\\behaviors\\"
+    master = b"..Behaviors\\FNIS_flowergirlsse_Behavior.hkx\x00..Behaviors\\idlebehavior.hkx\x00" + b"V" * 200
+    for n in ("Gen", "FG"):
+        plugin(d / f"{n}.esp", [rec("STAT", 0x01000800, [])])
+    make_bsa(d / "Gen.bsa", {beh + "0_master.hkx": master})
+    make_bsa(d / "FG.bsa", {beh + "fnis_flowergirlsse_behavior.hkx": b"F" * 300})
+    pack = Pack.open(pack.root)
+    assert found(pack, "req-behavior-missing", deep=False) == []          # its file loads
+    raw = pack.list_path.read_bytes()
+    pack.list_path.write_bytes(raw.replace(b"FG.esp", b"#FG.esp"))
+    hits = found(Pack.open(pack.root), "req-behavior-missing", deep=False)
+    assert len(hits) == 1 and hits[0].severity == "critico"
+    assert hits[0].items == [beh + "fnis_flowergirlsse_behavior.hkx"]   # vanilla names aren't asked for
 
 
 # ------------------------------------------------------------------ duplicates

@@ -451,9 +451,14 @@ def run_audit(pack: Pack, deep: bool = True, progress=None, vanilla_dir=None,
 
     disabled = {e[1:].strip().lower() for e in entries if e.startswith("#")}
     ini_loaded = {b.lower() for v in pack.archive_lists().values() for b in v}
+    try:                                   # mods marked "doesn't go": out on purpose, not forgotten
+        from .draft import excluded_files
+        parked = excluded_files(pack.root) if pack.root else set()
+    except Exception:  # noqa: BLE001
+        parked = set()
     for name in unlisted_plugins:
-        if name.lower() in disabled:
-            continue  # switched off on purpose with '#'
+        if name.lower() in disabled or name.lower() in parked:
+            continue  # switched off on purpose with '#', or parked
         h = pack.plugins[name.lower()]
         bsas = pack.bsas_for_plugin(name)
         if h.is_dummy and all(b.name.lower() in ini_loaded for b in bsas):
@@ -655,7 +660,7 @@ def run_audit(pack: Pack, deep: bool = True, progress=None, vanilla_dir=None,
     for low, path in pack.bsas.items():
         stem = Path(low).stem
         auto = stem in loaded_stems or (stem.endswith(" - textures") and stem[:-11] in loaded_stems)
-        if auto or low in ini_bsas or low in leftover_files:
+        if auto or low in ini_bsas or low in leftover_files or low in parked:
             continue
         base = stem[:-11] if stem.endswith(" - textures") else stem
         if any(Path(n).stem == base for n in pack.plugins):
@@ -835,6 +840,8 @@ def run_audit(pack: Pack, deep: bool = True, progress=None, vanilla_dir=None,
                        cache_dir=cache_dir, progress=say):
         add(r["code"], r["severity"], "requirements", r["msg"], r["subject"], r["params"],
             r["items"], r["fix"])
+    _baked_text_checks(pack, add, vanilla_dir, deep)
+    _sd_open_files(pack, add)
     if deep:
         _names_checks(pack, add, vanilla_dir)
         from . import scriptcheck as SC
@@ -965,6 +972,86 @@ def _names_checks(pack: Pack, add, vanilla_dir) -> None:
             items=items[:20] + ([f"(+{len(items) - 20})"] if len(items) > 20 else []),
             fix=F("names_fix", "fix-names", "seguro", {"n": len(back)}, plugin=h.name,
                   names=[[fid, nm] for fid, nm in sorted(back.items())]) if back else None)
+
+
+def _baked_text_checks(pack: Pack, add, vanilla_dir, deep: bool) -> None:
+    """Patches that saved "<Error: No strings file for lstring ID ...>" as the text
+    (textfix.py). Quick check reads the raw plugin; the deep one also opens
+    compressed records."""
+    from . import textfix as TF
+    from . import names as NM
+    from . import vanilla as V
+    codes = [i.path.stem.lower().split("_", 1)[1] for i in pack.lang_inis if "_" in i.path.stem]
+    lang = NM.LATIN_LANGS.get(codes[0] if codes else "en") or "english"
+    masters: dict[str, Path] = {}
+    places: list[Path] = []
+    if vanilla_dir and Path(vanilla_dir).is_dir():
+        vf = V.bsa_folder(Path(vanilla_dir))
+        places.append(vf)
+        for p in vf.iterdir():
+            if p.suffix.lower() in (".esm", ".esl", ".esp"):
+                masters[p.name.lower()] = p
+    for h in pack.plugins.values():
+        masters[h.name.lower()] = h.path
+    if pack.data_dir:
+        places.append(pack.data_dir)
+    for name, src in pack.load_order():
+        h = pack.plugins.get(name.lower())
+        if src == "juego" or name.startswith("#") or not h or h.error:
+            continue
+        try:
+            found = TF.scan(h.path, deep=deep)
+        except Exception:  # noqa: BLE001
+            continue
+        if not found:
+            continue
+        back = TF.game_texts(found, masters, lang, places)
+        items = [f"{f['type']} {f['formid']:08X} {f['sig']}" + (f" → {back[(f['formid'], f['sig'], f['n'])]}"
+                                                               if (f["formid"], f["sig"], f["n"]) in back else "")
+                 for f in found]
+        add("text-baked-error", "aviso", "plugins", "text-baked-error", h.name,
+            {"name": h.name, "n": len(found), "fixable": len(back)},
+            items=items[:20] + ([f"(+{len(items) - 20})"] if len(items) > 20 else []),
+            fix=F("texts_restore", "fix-texts-restore", "seguro", {"n": len(back)}, plugin=h.name,
+                  texts=[[fid, sig, n, t] for (fid, sig, n), t in sorted(back.items())]) if back else None)
+
+
+# What the game keeps open from the SD: Atmosphère serves every mod plugin and
+# mod BSA from the card. With too many, files the game opens later (texts read
+# when a message box or a dialogue shows, streamed sounds) fail to open: empty
+# message boxes, NPCs that don't talk, a crash closing a sound that never opened.
+# Measured on Switch 1, Oct 2026: 255 failed at once, ~160 failed in heavy
+# scenes, 117 still left one message box empty, 104-108 worked.
+SD_FILES_WARN = 112
+SD_FILES_BAD = 150
+
+
+def sd_open_files(pack: Pack) -> dict:
+    """{"plugins", "ini", "plugin_bsas", "total"}: mod files the game opens from the SD."""
+    from . import console as CO
+    if not pack.data_dir:
+        return {"plugins": 0, "ini": 0, "plugin_bsas": 0, "total": 0}
+    drops = {d.lower() for d in CO.ini_drops(pack)}
+    files = {x.name.lower() for x in pack.data_dir.iterdir() if x.is_file()}
+    active = [CO._bare(e).lower() for e in pack.list_entries if not e.startswith("#")]
+    plugins = [a for a in active if a in files]
+    ini = {b.lower() for v in pack.archive_lists().values() for b in v}
+    ini_mod = {b for b in ini if b in files and b not in drops}
+    stems = {Path(x).stem for x in plugins}
+    pl = [n for n in files if n.endswith(".bsa") and n not in ini
+          and (Path(n).stem in stems or (Path(n).stem.endswith(" - textures") and Path(n).stem[:-11] in stems))]
+    return {"plugins": len(plugins), "ini": len(ini_mod), "plugin_bsas": len(pl),
+            "total": len(plugins) + len(ini_mod) + len(pl)}
+
+
+def _sd_open_files(pack: Pack, add) -> None:
+    try:
+        c = sd_open_files(pack)
+    except Exception:  # noqa: BLE001
+        return
+    sev = "critico" if c["total"] > SD_FILES_BAD else "aviso" if c["total"] > SD_FILES_WARN else "info"
+    add("sd-open-files", sev, "list", f"sd-open-files-{sev}", "sd-files",
+        {"n": c["total"], "plugins": c["plugins"], "bsas": c["ini"] + c["plugin_bsas"], "warn": SD_FILES_WARN})
 
 
 def _font_checks(pack: Pack, add, active_bsas, cache) -> None:

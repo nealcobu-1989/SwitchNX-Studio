@@ -445,6 +445,23 @@ def short_plugin_name(name: str, taken: set[str]) -> str:
     return f"{base}{n}{ext}"
 
 
+def _taken_stems(pack: Pack) -> set[str]:
+    """Names a short name must not take: every file in Data, every plugin of the
+    pack, the game's own masters and every line of the load list ('#' ones
+    too, they can be switched back on). A BSA named like any plugin in the load
+    order ('Skyrim.bsa', 'ccBGSSSE001-Fish.bsa') would load a second time by
+    that plugin's name."""
+    from . import ccc as C
+    taken = {Path(n).stem.lower() for n in pack.data_files} | {Path(n).stem.lower() for n in pack.plugins}
+    taken |= GAME_STEMS
+    raw = pack.list_path.read_bytes() if pack.list_path else b""
+    for e in C.parse_ccc(raw).entries:
+        name = e.lstrip("#").strip()
+        if name:
+            taken.add(Path(name).stem.lower())
+    return taken
+
+
 def plan_list_shorten(pack: Pack) -> list[tuple[str, str]]:
     """(old, new) for the active plugins with long names: every name costs its
     length in the .ccc. Same style as the BSA names (first word and initials),
@@ -452,7 +469,7 @@ def plan_list_shorten(pack: Pack) -> list[tuple[str, str]]:
     would load it twice)."""
     from . import ccc as C
     raw = pack.list_path.read_bytes() if pack.list_path else b""
-    taken = {Path(n).stem.lower() for n in pack.data_files} | {Path(n).stem.lower() for n in pack.plugins}
+    taken = _taken_stems(pack)
     out = []
     for e in C.parse_ccc(raw).entries:
         low = e.lower()
@@ -475,7 +492,7 @@ def plan_ini_shorten(pack: Pack, key: str) -> list[tuple[str, str]]:
         for b in parse_ini(path.read_bytes()).archive_list(key):
             if b.lower() not in [i.lower() for i in items]:
                 items.append(b)
-    taken = {Path(n).stem.lower() for n in pack.data_files} | {Path(n).stem.lower() for n in pack.plugins}
+    taken = _taken_stems(pack)
     out = []
     for b in items:
         low = b.lower()

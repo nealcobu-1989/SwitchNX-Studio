@@ -85,6 +85,7 @@ delete the BSAs afterwards (keep `Skyrim - Interface.bsa`, which holds the game'
 | Ini archive lists | 1024 characters each; the language ini (`Skyrim_en.ini`) wins over `Skyrim.ini` | The Doctor shortens BSA names |
 | BSA size | 1.9 GB per file | The app splits |
 | BSA order for **scripts** | A BSA listed in the ini beats one loaded by its plugin (the reverse of PC) | The Doctor flags mods that lose scripts |
+| Mod files open from the SD | Atmosphère serves every mod plugin and mod BSA from the SD, and the game keeps them open (Creation Club and the game's own files don't count). In one long test: 255 failed at once, ~160 failed in busy scenes, 117 still left a message box empty, 104 to 108 worked | The Doctor counts them (**mod files open from the SD**). Join BSAs (**Join mods into one BSA**), merge small patches with zEdit (**Join plugins**), mark mods you don't use as **Doesn't go**, drop empty plugins whose BSA already loads from the ini |
 | RAM | On Switch 1, the game crashed around **2.8 to 2.95 GB** of "Application" memory (Status Monitor) in one long test | Add mods in batches; test the same way every time (see below) |
 | SKSE `.dll` plugins | Don't run on Switch | Features that need them won't work; Convert leaves them out |
 | MCM menus | Don't exist on Switch | Options keep their defaults |
@@ -129,9 +130,29 @@ A homebrew `.nro` in the app's style to switch mods on and off on the Switch its
 | The game closes in a city | Usually RAM | Status Monitor photo at that spot; lighten textures or drop a heavy mod |
 | Purple or black textures | A PC texture that wasn't converted | Convert the mod or use the Diet |
 | A quest doesn't start | Missing `.seq` | Doctor offers to create it |
+| Empty message boxes (standing stones, tutorial tips), NPCs that stand there without talking, race descriptions missing | Too many mod files open from the SD: texts read on the fly fail to open | Doctor: **mod files open from the SD**. Bring the count down (see Limits), then test the same spot |
+| Crash when opening the map, crash report in thread `LibAudioUpdate` at `nn::fs::CloseFile` | A sound that failed to open (same cause as above) is closed later | Same as above |
+| A journal entry or name reads `<Error: No strings file for lstring ID ...>` | A patch saved in an editor without the game's texts copied the error message | Doctor » **Use the game's texts** (needs the game's files list) |
+| Everyone in T-pose after switching an animation mod off | The generated behaviors still call that mod's behavior file | Mark the mod **Doesn't go** and **Generate behaviors** again; the Doctor flags it as *the behaviors call files that don't load* |
+| Nemesis: ERROR(1210) `jumpbehavior.hkx` | XPMSE's FNIS list only has alternate animations; on Switch there's no menu to pick them | Set XPMSE's `FNIS_XPMSE_List.txt` aside in the behaviors work folder and generate again |
 
 Always end a fix by asking them to run **Check again** and, if they're testing, to note the
 RAM in the same test spot.
+
+## Making room (what worked)
+
+- **Join BSAs** of mods that stay together (a family: Enai's mods, world visuals, enemies) into one
+  pair of archives. A joined archive loads at one place in the order, so a file can change
+  winner: run **Check file conflicts** before and after and compare. Keep mods you may remove
+  later in their own group.
+- **Merge small patches** with zEdit's zMerge (Clean - Merge down, game load order, archives
+  extracted). Verify every record made it before replacing the plugins. Saves of the old plugins
+  won't load the new one: start a new game.
+- **Doesn't go** for mods you don't use, instead of only `#`: their files leave the SD too.
+  A mod whose files sit in a joined archive keeps that archive while another mod of it goes.
+- Plugins that need SKSE only for their menu often work; ones whose core scripts call SKSE
+  or ship `.dll` plugins don't. A `_DISTR.ini` (Spell Perk Item Distributor) doesn't run on
+  Switch: check whether the player still gets what it hands out.
 
 ## Honest boundaries
 
