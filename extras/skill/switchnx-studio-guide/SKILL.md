@@ -85,8 +85,10 @@ delete the BSAs afterwards (keep `Skyrim - Interface.bsa`, which holds the game'
 | Ini archive lists | 1024 characters each; the language ini (`Skyrim_en.ini`) wins over `Skyrim.ini` | The Doctor shortens BSA names |
 | BSA size | 1.9 GB per file | The app splits |
 | BSA order for **scripts** | A BSA listed in the ini beats one loaded by its plugin (the reverse of PC) | The Doctor flags mods that lose scripts |
-| Mod files open from the SD | Atmosphère serves every mod plugin and mod BSA from the SD, and the game keeps them open (Creation Club and the game's own files don't count). In one long test: 255 failed at once, ~160 failed in busy scenes, 117 still left a message box empty, 104 to 108 worked | The Doctor counts them (**mod files open from the SD**). Join BSAs (**Join mods into one BSA**), merge small patches with zEdit (**Join plugins**), mark mods you don't use as **Doesn't go**, drop empty plugins whose BSA already loads from the ini |
-| RAM | On Switch 1, the game crashed around **2.8 to 2.95 GB** of "Application" memory (Status Monitor) in one long test | Add mods in batches; test the same way every time (see below) |
+| Mod files open from the SD | Atmosphère serves every mod plugin and mod BSA from the SD, and the game keeps them open (Creation Club and the game's own files don't count). In one long test: 255 failed at once, ~160 failed in busy scenes, 117 still left a message box empty. 108 started fine, but once playing it left texts empty: Survival's hunger notifications, low magicka, the standing stones' message. 104 worked: aim for 104 or fewer | The Doctor counts them (**mod files open from the SD**). Join BSAs (**Join mods into one BSA**), merge small patches with zEdit (**Join plugins**), mark mods you don't use as **Doesn't go**, drop empty plugins whose BSA already loads from the ini |
+| RAM | On Switch 1, the game crashed around **2.8 to 2.95 GB** of "Application" memory (Status Monitor) in one long test; another pack peaked at 2.85 GB in the College of Winterhold and held. A full pack plus Beyond Skyrim: Bruma sat at 2.77 GB at the Pale Pass gate and crashed every time it crossed (a second worldspace needs 300 to 400 MB free) | Add mods in batches; test the same way every time (see below) |
+| Start-up quests | Every Start Game Enabled quest of every mod starts at once in a new game (one pack had ~580). Switch works through them slowly | For the first 15-20 minutes, mod followers and quest givers may not talk yet: come back later before calling it a bug (the Doctor notes the total) |
+| Loose SEQ files (`Data\seq`) | Not confirmed on Switch | Keep each SEQ inside a BSA that loads; the Doctor lists the ones that are only loose |
 | SKSE `.dll` plugins | Don't run on Switch | Features that need them won't work; Convert leaves them out |
 | MCM menus | Don't exist on Switch | Options keep their defaults |
 | Names with apostrophes or symbols | Google Drive turns them into `_` and the plugin stops loading | Doctor » safe name |
@@ -95,6 +97,8 @@ delete the BSAs afterwards (keep `Skyrim - Interface.bsa`, which holds the game'
 ## Testing on the console
 
 - **Status Monitor** (a Tesla overlay) shows CPU, GPU, RAM ("Application" is the game).
+- **Frame pacing**: a frame limiter at 40 FPS that the game can't hold everywhere swings
+  between 30 and 40 and feels choppy even with low RAM; 30 is steady.
 - **A fixed RAM test**: load the same save, teleport to the same busy city, write down the
   highest Application value. Teleporting is a worst case (the old area is still loaded
   when the new one arrives), which makes it a good, repeatable benchmark.
@@ -105,7 +109,20 @@ delete the BSAs afterwards (keep `Skyrim - Interface.bsa`, which holds the game'
   textures), many actors.
 - The texture **Diet** (Textures & audio page, or in Convert) is the biggest lever for spikes.
 - The pack may include **SkyNX Test Tools** (a lesser power with menus: teleport, spawn one
-  or many enemies, remove them, time of day, heal), handy for these tests.
+  or many enemies, remove them, time of day, weather, player helpers), handy for these tests.
+  Since 1.3, **Mod creatures** spawns Harkon's combat form, Karstaag, a werebear or 14
+  different MihailMods creatures at once: a quick way to see new skeletons and a memory peak
+  without playing hours to reach them. **Heal** is in the Player menu.
+- **A quest that got stuck** (Switch has no console for `setstage`): Test Tools 1.2 has
+  **Quests**. It goes through the quests marked as active in the Journal: **Next stage**
+  sets the first later stage not done yet, **Restart quest** stops, resets and starts it
+  again (after a confirmation). Save first: skipping stages can leave things undone, and
+  restarting a long quest can break it. The quest list is written into `NXTest.esp` when
+  the project is packed, so a quest from a mod added later shows up after the next Pack.
+  **Player** has +1 perk point, +1000 gold, god mode and **No collision** to walk out of
+  a stuck spot (use it again to switch it back).
+- Survival Mode: "level up available" but no Health/Magicka/Stamina choice in the Skills
+  menu is normal there: the level up comes after sleeping in a bed.
 
 ## SkyNX Mods (homebrew on the console)
 
@@ -131,10 +148,23 @@ A homebrew `.nro` in the app's style to switch mods on and off on the Switch its
 | Purple or black textures | A PC texture that wasn't converted | Convert the mod or use the Diet |
 | A quest doesn't start | Missing `.seq` | Doctor offers to create it |
 | Empty message boxes (standing stones, tutorial tips), NPCs that stand there without talking, race descriptions missing | Too many mod files open from the SD: texts read on the fly fail to open | Doctor: **mod files open from the SD**. Bring the count down (see Limits), then test the same spot |
+| One mod's message box is always empty (Yes/No with no text) while other mods' boxes work | Not known for sure. NX Quick Save's came back after its two messages got a title (FULL) in SSEEdit, but many mods' boxes have no title and work; among those, NX Quick Save was the only ESL-flagged plugin | Back up the plugin, give the message a title in SSEEdit (any text; it isn't shown), put it in the mod's folder under `Mods`, Copy to SD and test |
+| A red "!" where an item's model should be, or a crash on one object | The model inside the BSA is blank: right size, all zeros (21 Apothecary meshes in a joined archive) | Doctor's deep check: **files are blank**. Take those files from the mod's original download, put the fixed BSA or loose files in the mod's folder under `Mods`, Pack again |
 | Crash when opening the map, crash report in thread `LibAudioUpdate` at `nn::fs::CloseFile` | A sound that failed to open (same cause as above) is closed later | Same as above |
 | A journal entry or name reads `<Error: No strings file for lstring ID ...>` | A patch saved in an editor without the game's texts copied the error message | Doctor » **Use the game's texts** (needs the game's files list) |
 | Everyone in T-pose after switching an animation mod off | The generated behaviors still call that mod's behavior file | Mark the mod **Doesn't go** and **Generate behaviors** again; the Doctor flags it as *the behaviors call files that don't load* |
-| Nemesis: ERROR(1210) `jumpbehavior.hkx` | XPMSE's FNIS list only has alternate animations; on Switch there's no menu to pick them | Set XPMSE's `FNIS_XPMSE_List.txt` aside in the behaviors work folder and generate again |
+| Nemesis: ERROR(1210) `jumpbehavior.hkx` | Nemesis' download has a template for `attackbehavior.hkx` (a combat-mod file) that needs a `jumpbehavior.hkx` no mod of the pack brings; FNIS animations (Flower Girls) plus XPMSE's alternate sets make Nemesis build it | Since 0.9.23 the app leaves that template out when preparing; on an older work folder move `Nemesis_AttackBehavior.xml` out of `Data\meshes\actors\character\behaviors` and generate again |
+| Nemesis: ERROR(6006) "Missing latest engine files" | The work folder is new and has no cache | **Update Engine** first, then **Launch** (every time the app prepares the folder) |
+| A mod follower or quest giver doesn't talk in a new game (but did in an older save) | Its start-up quests haven't finished starting (see Limits) | Play a while and come back; a save made earlier already had them running |
+| A follower says yes but stays behind / the old follower leaves | The game allows one follower of its own system; followers with their own framework (Lucien, Remiel) come on top. Amazing Follower Tweaks breaks custom-framework followers | Normal; a multiple-followers mod is a choice, not a fix |
+| A mod NPC with a black or purple face | The mod ships no FaceGen for it (the face is built at run time) | The Creation Kit can export it (Ctrl+F4 on the NPC) on PC; otherwise it stays |
+| A script looks for a plugin by its PC name and never finds it | KokaNX-style short names (`SexLabAA.esp` for `SexLab-AmorousAdventures.esp`) break `GetFormFromFile` checks between mods | The Doctor lists scripts asking for plugins that aren't loaded: a [gone] name that is really a renamed plugin is worth fixing (the script's string must name the plugin as it is now) |
+| Bright cyan rectangles on the sea, glowing rings around a water wheel | Water textures (`textures\water\`, Realistic Water Two) converted with the full mip chain; the Switch wants at most 4 mips there | Since 0.9.23 Convert caps them; on an older conversion take the water textures from a port that works (4 mips) and rebuild the BSA |
+| Crash while loading a new land (crossing into Bruma), crash report in thread `BSTaskManager` at `__memcpy_device` with `X[00] = 0`; before it, a freeze with 0% CPU | Out of memory: the loader got no buffer. A whole worldspace needs 300 to 400 MB free on top of what the pack holds; Bruma on top of a full pack sat at 2.77 GB at the border and never made it across | Not a missing file. Drop the new land or make room (lighter textures, Lite versions of mods that add gear to every NPC); test at the same spot with Status Monitor |
+
+**Fixing a file by hand in a project**: edit it in the mod's folder under `Mods` (or `Base`), never
+in `Switch`. **Copy to SD** packs `Switch` again from the project and the fix is lost; the next
+Doctor check brings the `Mods` change in as an undoable step. Keep the old file in a backup first.
 
 Always end a fix by asking them to run **Check again** and, if they're testing, to note the
 RAM in the same test spot.
@@ -148,6 +178,50 @@ RAM in the same test spot.
 - **Merge small patches** with zEdit's zMerge (Clean - Merge down, game load order, archives
   extracted). Verify every record made it before replacing the plugins. Saves of the old plugins
   won't load the new one: start a new game.
+- **What a merge changes besides the plugin** (learned merging Flower Girls' 11 plugins):
+  - zMerge gives new FormIDs to records that clash (`map.json` in the merge folder). Voices
+    and FaceGen are named by FormID, FaceGen meshes name their tint, and scripts call
+    `Game.GetFormFromFile(id, "Plugin.esp")`. **Join mods** in the Workshop applies that map
+    since 0.9.23 (file names, tint paths, script names and ids); a hand merge needs the same.
+  - A script that looks a merged plugin up by name breaks silently: search the BSAs' scripts
+    for the members' names (the Doctor's *Scripts ask for plugins…* shows them as [gone]).
+  - The merged plugin loads where its **last** member was. Records of an `.esm` member, or of an
+    early plugin, now beat everything in between: compare who wins each record before and after.
+    Where the merge now reverts earlier fixes (water, ownership, locations of cells), carry them
+    over; where a patch used to lose to what it patched (a Flower Girls patch for Caught Red
+    Handed lost to Quest Expansions), keep the old winner.
+  - Its SEQ must list every Start Game Enabled quest of the merged plugin (zMerge's may not),
+    inside a BSA.
+- **zMerge and the first plugin** (zEdit 0.6.x, learned merging 16 MihailMods plugins and 33 patches):
+  - With **Clean**, zMerge doesn't rewrite the references that point at the **first** plugin of the
+    merge (the one it doesn't renumber), and stops with *Failed to remove master <first plugin>*.
+  - **Clobber** builds "successfully" but leaves references with the session's load-order indexes:
+    a merge of 33 patches lost 84 (48 placed objects, 18 enable parents, 15 recipe entries).
+  - What works: put a **decoy** first (an esp with one record nobody uses, an old file date) and use
+    Clean; the leftover master of the decoy can be renamed to a master that always loads and no
+    record uses. Then check that every reference resolves and every member's record is there.
+  - Plugins with **navmeshes of their own** don't merge safely: their navmesh data points at their
+    own cells, doors and navmeshes, which zMerge renumbers. Keep them as plugins.
+  - zEdit writes its `merges.json` back when it closes, from memory: edit that file only with zEdit
+    closed, and keep a copy.
+- **A patch between a big mod and the rest** (MihailMods against Revamped, Cosmetic Vampire
+  Overhaul, Mortal Enemies, Growl and Triumvirate): load the big mod early so lighting, the
+  Unofficial Patch and city mods keep their cells, then carry over only what it adds that matters
+  (new scripts on NPCs, new skeletons on races, the union of merchant chests) on top of the
+  record that wins, inside a merged patch so it costs no file.
+- **Updating a mod that lives in a joined suite** (Cloaks and Capes 1.4 to 1.7 inside SuiteXM/SuiteXT):
+  its old files stay in the suite, and the suite loads from the ini, so it beats the new version's own
+  BSA. Replace the mod's files inside the suite (same folder paths) and swap the plugin in its `Mods`
+  folder; the suite keeps its place and the open-files count doesn't change. Check whether the new
+  plugin drops a master (1.7 dropped USSEP and lost its fixes on 3 outfits) and carry those over.
+- **Joining BSAs from both ini lists**: one archive lives in one list. Scripts and meshes go in
+  `sResourceArchiveList`; voices or textures that replace the game's need `sResourceArchiveList2`
+  (Serana Dialogue Add-On's 806 Serana voices). Check what changes winner before choosing.
+- **Scripts that run on their own** (the Doctor's *Mods that keep scripts running*): repeating
+  timers cost the Switch's CPU, not the number of scripts. A follower with 1,177 scripts and one
+  timer weighs less than a faith overhaul with 88 timers.
+- **The PC script extender's copies of the game's scripts** inside a mod's BSA (Auri brought 39)
+  must keep losing to the game's: the Doctor no longer promotes such a BSA in the ini.
 - **Doesn't go** for mods you don't use, instead of only `#`: their files leave the SD too.
   A mod whose files sit in a joined archive keeps that archive while another mod of it goes.
 - Plugins that need SKSE only for their menu often work; ones whose core scripts call SKSE

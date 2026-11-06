@@ -163,3 +163,37 @@ def replace_texture_folders(raw: bytes, low: dict[str, str]) -> tuple[bytes, int
     result = bytes(out)
     parse(result)  # must still be a consistent file
     return result, changed
+
+
+def replace_texture_paths(raw: bytes, fn) -> tuple[bytes, int]:
+    """Every texture path of the mesh's texture sets through fn(path) -> path.
+    Returns (new bytes, paths changed); the same bytes when none changed."""
+    nif = parse(raw)
+    out = bytearray(raw[:nif.header_end])
+    sizes = list(nif.block_sizes)
+    changed = 0
+    for i, off in enumerate(nif.block_offsets):
+        blk = raw[off:off + nif.block_sizes[i]]
+        if nif.block_type(i) == "BSShaderTextureSet":
+            n, = struct.unpack_from("<I", blk, 0)
+            o, parts = 4, [struct.pack("<I", n)]
+            for _ in range(n):
+                s, o2 = _sstr(blk, o)
+                ns = fn(s)
+                if ns != s:
+                    changed += 1
+                    s = ns
+                enc = s.encode("cp1252")
+                parts.append(struct.pack("<I", len(enc)) + enc)
+                o = o2
+            parts.append(blk[o:])
+            blk = b"".join(parts)
+            sizes[i] = len(blk)
+        out += blk
+    out += raw[nif.block_offsets[-1] + nif.block_sizes[-1]:] if nif.block_offsets else b""
+    if not changed:
+        return raw, 0
+    struct.pack_into(f"<{len(sizes)}I", out, nif.sizes_offset, *sizes)
+    result = bytes(out)
+    parse(result)
+    return result, changed

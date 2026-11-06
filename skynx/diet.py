@@ -31,7 +31,7 @@ from pathlib import Path
 from . import nvn
 from .bsa import BsaArchive, read_bsa, write_bsa
 from .errors import SkynxError
-from .texplan import PRESETS, TEXCONV_FMT, est_bytes, full_mips, max_side, plan_texture
+from .texplan import PRESETS, TEXCONV_FMT, est_bytes, full_mips, max_side, plan_texture, target_mips
 from .textures import inspect, is_opaque as dds_is_opaque
 from .tools import Toolset, ToolError, run
 
@@ -106,7 +106,7 @@ def plan_nvn(rel: str, raw: bytes, preset: str, bc1: bool = False,
         if bc1 and fmt == "BC3":
             opaque = nvn.is_opaque(nvn.deswizzle(tex))
             fmt = "BC1" if opaque else fmt
-        tmips = 1 if mips == 1 else full_mips(tw, th)
+        tmips = 1 if mips == 1 else target_mips(rel, tw, th)
         after = _nvn_bytes(fmt, tw, th, tmips, layers)
         return DietPlan(rel, "nvn", name, w, h, mips, fmt, tw, th, tmips, "texconv", before,
                         after, "", True, opaque)
@@ -115,7 +115,7 @@ def plan_nvn(rel: str, raw: bytes, preset: str, bc1: bool = False,
     if not drop:
         return _keep(rel, "nvn", name, w, h, mips, before, "small")
     if mips > drop:
-        tmips = mips - drop
+        tmips = min(mips - drop, target_mips(rel, tw, th))
         return DietPlan(rel, "nvn", name, w, h, mips, name, tw, th, tmips, "drop_mips", before,
                         _nvn_bytes(name, tw, th, tmips, layers), "", True)
     fmt = REENCODE_AS.get(name, name)
@@ -123,7 +123,7 @@ def plan_nvn(rel: str, raw: bytes, preset: str, bc1: bool = False,
     if bc1 and fmt == "BC3":
         opaque = nvn.is_opaque(nvn.deswizzle(tex))
         fmt = "BC1" if opaque else fmt
-    tmips = 1 if mips == 1 else full_mips(tw, th)
+    tmips = 1 if mips == 1 else target_mips(rel, tw, th)
     return DietPlan(rel, "nvn", name, w, h, mips, fmt, tw, th, tmips, "texconv", before,
                     _nvn_bytes(fmt, tw, th, tmips, layers), "", True, opaque)
 

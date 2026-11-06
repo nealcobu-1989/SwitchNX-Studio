@@ -11,6 +11,12 @@ A Windows app in English and Spanish, plus a homebrew to switch mods on and off 
 > (Atmosphère, with LayeredFS). No game files, no Nintendo SDK tools and no other people's mods are
 > included or ever will be.
 
+## Video tour
+
+[![SwitchNX Studio video tour (10 minutes)](docs/img/video-tour.jpg)](https://youtu.be/cHxcAihTc3M)
+
+A 10-minute walk through the app. [Watch on YouTube](https://youtu.be/cHxcAihTc3M).
+
 ## What's in here
 
 | Part | What it is | Folder |

@@ -756,3 +756,18 @@ def test_short_bsa_names_never_take_a_load_order_plugins_name(tmp_path):
     assert set(ren) == {"SkyrimFOM.bsa", "WintersunXY.bsa"}
     news = {b.lower() for b in ren.values()}
     assert not news & {"skyrim.bsa", "winter.bsa"}
+
+
+def test_water_textures_keep_four_mips():
+    """Realistic Water Two's water textures converted with the full mip chain
+    drew cyan rectangles on the sea and rings around water wheels on the
+    Switch; the port with 4 mips renders right. Everything else keeps the
+    full chain."""
+    from skynx.texplan import WATER_MIPS, plan_texture, target_mips
+    assert target_mips("textures\\water\\defaultwater.dds", 1024, 1024) == WATER_MIPS == 4
+    assert target_mips("textures/water/skyrim.esm/flow.-1.-14.dds", 64, 64) == 4
+    assert target_mips("textures\\clutter\\bucket.dds", 1024, 1024) == 11
+    p = plan_texture("textures\\water\\RWTCalmWater.dds", tex(4096, 4096, "BC7", 13), "diet", True)
+    assert (p.tw, p.th, p.tmips, p.fmt, p.texconv) == (1024, 1024, 4, "BC3", True)
+    p = plan_texture("textures\\water\\flow.1.1.dds", tex(64, 64, "BC7", 7), "diet", True)
+    assert p.tmips == 4 and p.texconv

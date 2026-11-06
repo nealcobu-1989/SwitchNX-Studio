@@ -11,6 +11,12 @@ Una app para Windows en inglés y español, más un homebrew para encender y apa
 > personalizado (Atmosphère, con LayeredFS). Aquí no hay ni habrá archivos del juego, herramientas
 > del SDK de Nintendo ni mods de otras personas.
 
+## Video del recorrido
+
+[![Recorrido en video por SwitchNX Studio (10 minutos)](docs/img/video-tour.jpg)](https://youtu.be/cHxcAihTc3M)
+
+Un recorrido de 10 minutos por la app (en inglés). [Verlo en YouTube](https://youtu.be/cHxcAihTc3M).
+
 ## Qué hay aquí
 
 | Parte | Qué es | Carpeta |

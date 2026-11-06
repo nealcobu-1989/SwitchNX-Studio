@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import difflib
 import re
+import struct
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -64,6 +65,9 @@ class Finding:
     @property
     def title(self) -> str:
         return self.text("en")[0]
+
+
+START_QUESTS_NOTE = 300   # Start Game Enabled quests in the whole pack before the Doctor mentions the wait
 
 
 def _fix_out(fix: dict | None, lang: str) -> dict | None:
@@ -257,6 +261,41 @@ class _BsaCache:
 _SCAN_CACHE: dict[tuple, dict] = {}
 
 
+BLANK_MIN = 17        # tree LOD .btt files of 4 zero bytes are real; anything this size or less is skipped
+
+
+def _blank_entry(arc: BsaArchive, e, fh) -> bool:
+    """True when a file in the archive is all zeros (a right size and no data).
+    Apothecary's meshes in a joined BSA came out like this (Nov 2026): the
+    game showed a red "!" for the potion. Cheap: an uncompressed file is read
+    in full only when its first 256 bytes are zero, a compressed one only when
+    it compresses far better than a real file does."""
+    try:
+        fh.seek(e.offset)
+        skip = 0
+        if arc.embed_names:
+            k = fh.read(1)[0]
+            fh.read(k)
+            skip = k + 1
+        if e.compressed:
+            orig = struct.unpack("<I", fh.read(4))[0]
+            stored = e.size - skip - 4
+            if orig < BLANK_MIN or stored * 32 > orig:
+                return False
+            data = arc.read_file(e, fh)
+        else:
+            size = e.size - skip
+            if size < BLANK_MIN:
+                return False
+            head = fh.read(min(256, size))
+            if any(head):
+                return False
+            data = head + fh.read(size - len(head))
+        return len(data) >= BLANK_MIN and data == bytes(len(data))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _content_scan(bpath: Path, arc: BsaArchive, deep: bool) -> dict | None:
     try:
         st = bpath.stat()
@@ -268,10 +307,13 @@ def _content_scan(bpath: Path, arc: BsaArchive, deep: bool) -> dict | None:
     if not deep:
         return None
     out = {"tex": 0, "tex_count": 0, "pc_dds": 0, "audio_pc": 0, "diet_before": 0, "diet_after": 0,
-           "rgba_facetint": 0, "formats": Counter(), "audio": Counter()}
+           "rgba_facetint": 0, "formats": Counter(), "audio": Counter(), "blank": []}
     with bpath.open("rb") as fh:
         for e in arc.entries:
             low = e.name.lower()
+            if _blank_entry(arc, e, fh):
+                out["blank"].append(e.path)
+                continue
             if low.endswith(".dds"):
                 try:
                     info = inspect_tex(arc.read_head(e, 256, fh))
@@ -762,6 +804,11 @@ def run_audit(pack: Pack, deep: bool = True, progress=None, vanilla_dir=None,
             audio_counter.update(scan["audio"])
             rgba_facetint += scan["rgba_facetint"]
             mod["scanned"] = True
+            blank = scan.get("blank") or []
+            if blank:
+                add("bsa-blank", "critico", "bsa", "bsa-blank", bpath.name,
+                    {"name": bpath.name, "n": len(blank)},
+                    items=blank[:30] + ([f"(+{len(blank) - 30})"] if len(blank) > 30 else []))
         tex_total += mod["tex"]
         tex_by_mod[bpath.name] += mod["tex"]
         mods.append(mod)
@@ -1245,6 +1292,9 @@ def _shares_with_ini(pack: Pack, cache, low: str, ini_bsas: set[str]) -> bool:
                               for o in ini_bsas)
 
 
+from .scriptcheck import skse_base_in  # noqa: E402
+
+
 def _ini_priority_checks(pack: Pack, add, cache, vanilla_pex: set[str] = frozenset()) -> None:
     """On Switch a BSA from the ini wins over one a plugin loads by its name
     (conflicts.py). A plugin's BSA that shares files with an ini BSA loses them,
@@ -1268,6 +1318,9 @@ def _ini_priority_checks(pack: Pack, add, cache, vanilla_pex: set[str] = frozens
         if not src.startswith("plugin:"):
             continue
         mine = {x for x in _bsa_paths(cache, pth) if x.endswith(".pex")}
+        # the PC script extender's copies of the game's scripts (Auri's BSA had
+        # 39) must keep losing: promoting their BSA would make them win
+        mine -= set(skse_base_in(mine))
         if not mine:
             continue
         lost: dict[str, set[str]] = {}
@@ -1322,6 +1375,7 @@ def _seq_checks(pack: Pack, add, order, active_bsas, cache, game) -> None:
         for e in arc.entries:
             if e.folder.lower() == "seq" and e.name.lower().endswith(".seq"):
                 found[e.name.lower()] = (bpath.name, None, arc, e)
+    in_bsa = set(found)
     loose = next((p for p in pack.data_dir.iterdir() if p.is_dir() and p.name.lower() == "seq"), None) \
         if pack.data_dir else None
     if loose:
@@ -1332,6 +1386,9 @@ def _seq_checks(pack: Pack, add, order, active_bsas, cache, game) -> None:
     def master_scan(m: str):
         h = pack.plugins.get(m.lower())
         return quest_scan(h.path) if h else None
+
+    start_quests: dict[str, int] = {}
+    loose_only: list[str] = []
 
     for name, _src in order:
         h = pack.plugins.get(name.lower())
@@ -1344,6 +1401,10 @@ def _seq_checks(pack: Pack, add, order, active_bsas, cache, game) -> None:
         rel = seq_path(h.name)
         key = rel.split("\\", 1)[1]
         have = found.get(key)
+        if want:
+            start_quests[h.name] = len(want)
+            if have is not None and key not in in_bsa:
+                loose_only.append(h.name)
         stem = Path(h.name).stem
         if have is None:
             if not want:
@@ -1379,6 +1440,16 @@ def _seq_checks(pack: Pack, add, order, active_bsas, cache, game) -> None:
                   bsa=None if where == "Data\\seq" else where, loose=where == "Data\\seq")
             if keep else None)
 
+    if loose_only:
+        add("seq-loose-only", "info", "plugins", "seq-loose-only", "seq",
+            {"n": len(loose_only), "list": ", ".join(loose_only[:6])}, items=sorted(loose_only))
+    total = sum(start_quests.values())
+    if total >= START_QUESTS_NOTE:
+        top = sorted(start_quests.items(), key=lambda kv: -kv[1])
+        add("start-quests", "info", "plugins", "start-quests", "seq",
+            {"n": total, "top": ", ".join(f"{n} ({k})" for n, k in top[:3])},
+            items=[f"{n}: {k}" for n, k in top[:15]])
+
 
 # ---------------------------------------------------------------- LOOT notes in the Doctor
 # LOOT recommends PC-only tools (SKSE plugins, xEdit cleaning...) that don't
@@ -1411,6 +1482,27 @@ def add_loot_findings(R: "AuditResult", pack: Pack, masterlist, aliases=None, us
               {"plugin": merged, "n": len(comps), "list": ", ".join(comps),
                "dummies_en": (f" Kept empty so patches still find their masters: {', '.join(d)}.") if d else "",
                "dummies_es": (f" Se dejan vacíos para que los parches encuentren sus masters: {', '.join(d)}.") if d else ""})
-    if sg.unknown:
+    # Merges made in this project (zMerge, recorded when the merge was brought
+    # in) carry no marks LOOT can read: they are told apart from the rest.
+    own: dict[str, dict] = {}
+    try:
+        from .builder import load_mods
+        for rec in load_mods(pack).values():
+            src = rec.get("source") if isinstance(rec, dict) else None
+            if isinstance(src, dict) and src.get("kind") == "merge":
+                for p in rec.get("plugins", []):
+                    own[p.lower()] = {"comps": list(src.get("components") or []), "tool": src.get("tool") or ""}
+    except Exception:  # noqa: BLE001
+        own = {}
+    merged = [u for u in sg.unknown if u["name"].lower() in own]
+    rest = [u for u in sg.unknown if u["name"].lower() not in own]
+    if merged:
+        tools = sorted({own[u["name"].lower()]["tool"].split(" (")[0] for u in merged} - {""})
+        R.add("loot-own-merge", "info", "requirements", "loot-own-merge", "",
+              {"n": len(merged), "tool": ", ".join(tools) or "zMerge"},
+              items=[f'{u["name"]} ({len(own[u["name"].lower()]["comps"])}: '
+                     + ", ".join(own[u["name"].lower()]["comps"][:6])
+                     + (" …" if len(own[u["name"].lower()]["comps"]) > 6 else "") + ")" for u in merged])
+    if rest:
         R.add("loot-unknown", "info", "requirements", "loot-unknown", "",
-              {"n": len(sg.unknown)}, items=[u["name"] for u in sg.unknown])
+              {"n": len(rest)}, items=[u["name"] for u in rest])

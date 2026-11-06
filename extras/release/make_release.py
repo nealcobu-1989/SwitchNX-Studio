@@ -66,7 +66,7 @@ def main() -> int:
         with tempfile.TemporaryDirectory() as tmp:
             subprocess.run([sys.executable, str(ROOT / "extras/nxtest/build.py"), str(a.skyrim_esm),
                             str(ROOT / "extras/nxtest/pex"), tmp], check=True)
-            zip_up(OUT / "SkyNX-TestTools-1.1.zip",
+            zip_up(OUT / "SkyNX-TestTools-1.3.zip",
                    [("SkyNX Test Tools/NXTest.esp", Path(tmp) / "NXTest.esp"),
                     ("SkyNX Test Tools/NXTest.bsa", Path(tmp) / "NXTest.bsa"),
                     ("README.md", ROOT / "extras/nxtest/README.md")])

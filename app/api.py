@@ -1304,7 +1304,10 @@ class Api:
             from skynx import project as PJ
             if not (self._pack and self._pack.project):
                 raise CV.ConvertError("Open a project first.", "Abre primero un proyecto.")
+            nx = self._nxtest_refresh(tick)
             out = PJ.build(self._pack, progress=lambda f, i=0, n=0: tick(f, i, n))
+            if nx:
+                out["nxtest"] = nx
             from skynx import behaviors as BH
             try:
                 beh = BH.status(self._pack, self._tools())["state"]
@@ -2817,7 +2820,26 @@ class Api:
         if not (self._pack and self._pack.project):
             return None
         from skynx import project as PJ
-        return PJ.build(self._pack, progress=lambda f, i=0, n=0: tick(f, i, n))
+        nx = self._nxtest_refresh(tick)
+        out = PJ.build(self._pack, progress=lambda f, i=0, n=0: tick(f, i, n))
+        if nx:
+            out["nxtest"] = nx
+        return out
+
+    def _nxtest_refresh(self, tick) -> dict | None:
+        """SkyNX Test Tools: the pack's quests go into NXTest.esp before packing
+        (only when they changed). A problem here never stops the Pack."""
+        from skynx import nxtest as NX
+        try:
+            vd = self._folder("vanilla_dir")
+            r = NX.refresh(self._pack, Path(vd) if vd and Path(vd).is_dir() else None, self._pack.root,
+                           progress=lambda f: tick(f, 0, 0))
+            if r:
+                self._pack.reload()
+            return r
+        except Exception:  # noqa: BLE001
+            traceback.print_exc()
+            return None
 
     def sd_plan(self, sd_root: str) -> dict:
         def work(tick, sd):

@@ -1788,7 +1788,7 @@ function findingHtml(f) {
   const items = f.items && f.items.length ? `<details class="more"><summary>${T("details", f.items.length)}</summary><ul class="items">${f.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></details>` : "";
   const btn = (f.fix ? `<button class="fix ${f.fix.risk === "seguro" ? "safe" : ""}" data-fix="${esc(f.id)}">${esc(f.fix.label)}</button>` : "")
     + (f.alt || []).map((a, i) => `<button class="fix" data-fix="${esc(f.id)}#alt${i}">${esc(a.label)}</button>`).join("")
-    + (f.code === "loot-unknown" ? `<button class="fix" data-goloot="1">${T("lootPickBtn")}</button>` : "");
+    + (f.code === "loot-unknown" || f.code === "loot-own-merge" ? `<button class="fix" data-goloot="1">${T("lootPickBtn")}</button>` : "");
   return `<div class="finding s-${f.severity}"><span class="tick" title="${T("sev")[f.severity]}"></span>
     <div><div class="t">${esc(f.title)}</div><div class="d">${esc(f.detail)}</div>${items}</div><div class="act">${btn}</div></div>`;
 }
@@ -2794,6 +2794,7 @@ async function renderBatch() {
       <label>${T("cvMaxSize")} <select id="ba-max">${sizeOpts(A.max_size)}</select></label>
       <label>${T("cvPacking")} <select id="ba-pack">${packOpts(A.packing)}</select></label>
       <label class="ck"><input type="checkbox" id="ba-native" ${A.native && tools.sdk ? "checked" : ""} ${tools.sdk ? "" : "disabled"}> NvnTexpkg</label>
+      <label class="ck"><input type="checkbox" id="ba-bc1" ${A.bc1 && A.native && tools.sdk ? "checked" : ""} ${tools.sdk ? "" : "disabled"}> ${T("optBc1")}</label>
       <button class="ghost sm" id="ba-apply">${T("bApply")}</button></div>` : ""}
     ${B.problems._ ? `<p class="note warn">${esc(B.problems._)}</p>` : ""}
     <div class="bgrid">${B.items.length ? B.items.map(card).join("") : `<p class="empty">${T("bEmpty")}</p>`}</div>
@@ -2841,8 +2842,8 @@ async function renderBatch() {
   }));
   $("#ba-apply")?.addEventListener("click", () => {
     B.all = { ...A, preset: $("#ba-preset").value, max_size: $("#ba-max").value ? +$("#ba-max").value : null,
-              packing: $("#ba-pack").value, native: !!$("#ba-native")?.checked };
-    ready.forEach((it) => { const o = bOpts(it.id); ["preset", "max_size", "packing", "native"].forEach((k) => (o[k] = B.all[k])); });
+              packing: $("#ba-pack").value, native: !!$("#ba-native")?.checked, bc1: !!$("#ba-bc1")?.checked };
+    ready.forEach((it) => { const o = bOpts(it.id); ["preset", "max_size", "packing", "native", "bc1"].forEach((k) => (o[k] = B.all[k])); });
     renderBatch();
   });
   $("#b-clear")?.addEventListener("click", async () => { await call("batch_clear"); S.batch = null; renderBatch(); });

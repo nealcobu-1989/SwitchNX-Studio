@@ -31,6 +31,16 @@ CHARACTER = re.compile(r"(^|\\)actors\\character\\", re.I)
 ACTORS = re.compile(r"(^|\\)actors\\", re.I)
 PANDORABLE = re.compile(r"(^|\\)pandorable", re.I)
 SMALL_STUFF = re.compile(r"(^|\\)(clutter|effects|plants|landscape\\grass)\\", re.I)
+# Water textures (textures\water\: the water normals, RWTCalmWater, the
+# per-cell flow maps) must not get the full mip chain on the Switch: with
+# it the water shader draws bright cyan rectangles on the sea and rings
+# around water wheels (Realistic Water Two 5.7.3 converted with the full
+# chain, Pack 2026, 2026-11-04). The community port of the same files has
+# 4 mips at 1024 and at 64 and renders right, so that is the cap we keep.
+# The game's own NX water textures stop at 10 mips for 1024 (never 1x1)
+# and the flow maps have 1.
+WATER = re.compile(r"(^|\\)textures\\water\\", re.I)
+WATER_MIPS = 4
 
 PRESETS = ("koka", "diet", "extreme")
 DEFAULT_PRESET = "diet"           # the "Switch version" sizes
@@ -129,6 +139,15 @@ def full_mips(w: int, h: int) -> int:
     return n
 
 
+def target_mips(rel: str, w: int, h: int) -> int:
+    """Mip count a converted texture gets: the full chain, except water
+    textures, capped at WATER_MIPS (see WATER above)."""
+    n = full_mips(w, h)
+    if WATER.search(rel.replace("/", "\\")):
+        return min(n, WATER_MIPS)
+    return n
+
+
 @dataclass
 class TexPlan:
     rel: str
@@ -176,7 +195,7 @@ def plan_texture(rel: str, info: TexInfo | None, preset: str, sdk: bool,
         while max(tw, th) > cap:
             tw, th = max(1, tw // 2), max(1, th // 2)
     fmt = target_format(info.fmt, sdk)
-    tmips = info.mips if interface else full_mips(tw, th)
+    tmips = info.mips if interface else target_mips(rel, tw, th)
     run = (fmt != info.fmt) or (tw, th) != (w, h) or tmips != info.mips
     after = est_bytes(fmt, tw, th, tmips, info.cubemap)
     return TexPlan(rel, info.fmt, w, h, info.mips, info.cubemap, fmt, tw, th, tmips, run, sdk,

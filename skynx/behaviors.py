@@ -270,6 +270,29 @@ def seed_vanilla_behaviors(eng: Path, data: Path) -> int:
     return n
 
 
+# Nemesis' download has templates for behavior files the game doesn't have.
+# Nemesis_AttackBehavior.xml builds attackbehavior.hkx, which needs a
+# jumpbehavior.hkx that only combat mods bring: with FNIS animations and
+# XPMSE's alternate sets, Nemesis stopped with "ERROR(1210): Vital behavior
+# file cannot be found ... jumpbehavior.hkx" (Nov 2026).
+_UNUSED_TEMPLATES = {"nemesis_attackbehavior.xml": ("attackbehavior.hkx", "jumpbehavior.hkx")}
+
+
+def _drop_unused_templates(data: Path, mods: list[dict]) -> list[str]:
+    """Leave out the templates whose behavior files no mod of the pack brings."""
+    folder = data.joinpath(*_BEHAVIORS)
+    if not folder.is_dir():
+        return []
+    brought = {p.name.lower() for m in mods for p in Path(m["dir"]).rglob("*.hkx")}
+    gone = []
+    for f in list(folder.iterdir()):
+        need = _UNUSED_TEMPLATES.get(f.name.lower())
+        if need and not any(n in brought for n in need):
+            f.unlink()
+            gone.append(f.name)
+    return gone
+
+
 def prepare(pack: Pack, tools) -> dict:
     """Make the work folder: Nemesis (a copy), every mod's sources in order,
     the empty SkyrimSE.exe and the nemesis.ini that points there."""
@@ -293,6 +316,7 @@ def prepare(pack: Pack, tools) -> dict:
         for item in pkg.iterdir():                  # the rest of Nemesis' download: meshes, scripts
             if item.is_dir() and item.name.lower() in ("meshes", "scripts"):
                 shutil.copytree(item, data / item.name, dirs_exist_ok=True)
+    _drop_unused_templates(data, mods)
     eng = data / "Nemesis_Engine"
     for name in ("CriticalLog.txt", "UpdateLog.txt", "PatchLog.txt"):
         (eng / name).unlink(missing_ok=True)

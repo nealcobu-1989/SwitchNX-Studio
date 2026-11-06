@@ -355,3 +355,30 @@ def test_setup_status_and_splash_pref(tmp_path, monkeypatch):
     importlib.reload(A)
     again = A.Api()
     assert again.ui_prefs()["splash_hide"] is True and not again._settings.get("nexus_key")
+
+
+def test_own_merges_are_told_apart_from_unknown_plugins(tmp_path):
+    """ExtrasNX, PatchesNX...: zMerge merges made in the project. LOOT can't
+    know them, so the Doctor says so apart from the other unknown plugins."""
+    import json
+    from skynx import loot
+    from skynx.audit import AuditResult, add_loot_findings
+    from skynx.builder import _mods_file
+    from skynx.pack import Pack
+    pack = Pack.open(mini_pack(tmp_path / "P"))
+    ml = loot.load_masterlist(ROOT / "tests/fixtures/loot/masterlist.yaml")
+    R = AuditResult(pack)
+    add_loot_findings(R, pack, ml)
+    assert "Tiny.esp" in next(f for f in R.findings if f.code == "loot-unknown").items
+    f = _mods_file(pack)
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps({"Tiny (merge)": {"plugins": ["Tiny.esp"], "bsas": [], "source": {
+        "kind": "merge", "tool": "zMerge 0.6.7 (Clean)", "components": ["A.esp", "B.esp"]}}}), encoding="utf-8")
+    R = AuditResult(pack)
+    add_loot_findings(R, pack, ml)
+    own = next(f for f in R.findings if f.code == "loot-own-merge")
+    assert own.params["n"] == 1 and own.params["tool"] == "zMerge 0.6.7" and own.items == ["Tiny.esp (2: A.esp, B.esp)"]
+    assert not any(f.code == "loot-unknown" and "Tiny.esp" in f.items for f in R.findings)
+    for lang in ("en", "es"):
+        title, detail = own.text(lang)
+        assert "{" not in title + detail and "—" not in title + detail

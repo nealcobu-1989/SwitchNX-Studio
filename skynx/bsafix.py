@@ -66,7 +66,11 @@ def transform_bsa(src: Path, dest: Path, fn, extra: dict[str, bytes] | None = No
             files.append((path, p))
             changed += 1
         if changed:
-            write_bsa(files, dest, ver=arc.version, compress=arc.compressed_default)
+            # a Switch suite stores its meshes compressed file by file with the
+            # archive's default off (SuiteXM: flags 0x93); judging by the default
+            # alone wrote them all uncompressed (286 MB -> 407 MB)
+            compress = arc.compressed_default or any(e.compressed for e in arc.entries)
+            write_bsa(files, dest, ver=arc.version, compress=compress)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     return changed

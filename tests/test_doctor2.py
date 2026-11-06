@@ -363,3 +363,82 @@ def test_off_lines_of_plugins_that_are_gone(tmp_path):
     pack = Pack.open(pack.root)
     assert "#Ghost.esp" not in pack.list_entries
     assert not _find(pack, "off-without-file")
+
+
+def test_removing_a_mod_keeps_a_suite_others_share(tmp_path):
+    """Cloaks&Capes sat in SuiteXM/SuiteXT with 21 other mods (a joined suite).
+    Removing it must not take the suite: the archive and its ini line stay."""
+    from skynx.builder import _mods_file, load_mods, remove_mod
+    from skynx.ini import set_archive_list
+    pack = _pack(tmp_path)
+    for n in ("Cloaks", "Lanterns"):
+        d = tmp_path / n
+        d.mkdir()
+        (d / f"{n}.esp").write_bytes(plugin_bytes(["Skyrim.esm"]))
+        add_mod(pack, d)
+    pack = Pack.open(pack.root)
+    src = tmp_path / "f.nif"
+    src.write_bytes(b"x" * 64)
+    write_bsa([("meshes\\a\\f.nif", src)], pack.data_dir / "SuiteXM.bsa")
+    ini = pack.ini_paths[0]
+    ini.write_bytes(set_archive_list(ini.read_bytes(), "sResourceArchiveList",
+                                     pack.archive_lists().get("sResourceArchiveList", []) + ["SuiteXM.bsa"]))
+    mods = load_mods(pack)
+    for n in ("Cloaks", "Lanterns"):
+        mods[n]["bsas"] = ["SuiteXM.bsa"]
+    _mods_file(pack).write_text(json.dumps(mods), encoding="utf-8")
+    remove_mod(Pack.open(pack.root), "Cloaks")
+    pack = Pack.open(pack.root)
+    assert not (pack.data_dir / "Cloaks.esp").exists() and (pack.data_dir / "SuiteXM.bsa").exists()
+    assert "SuiteXM.bsa" in pack.archive_lists()["sResourceArchiveList"]
+    assert "Cloaks" not in load_mods(pack) and load_mods(pack)["Lanterns"]["bsas"] == ["SuiteXM.bsa"]
+    remove_mod(pack, "Lanterns")                   # the last one out takes it
+    assert not (Pack.open(pack.root).data_dir / "SuiteXM.bsa").exists()
+
+
+def test_rewriting_a_suite_keeps_meshes_compressed(tmp_path):
+    """SuiteXM stores its meshes LZ4-compressed file by file with the archive's
+    default flag off. A rewrite (blank-file fix, junk removal, a mod swapped
+    inside the suite) must keep them compressed."""
+    import struct
+    from skynx.bsafix import transform_bsa
+    src = tmp_path / "a.nif"
+    src.write_bytes(b"Gamebryo" + b"\x01" * 4000)
+    txt = tmp_path / "a.txt"
+    txt.write_bytes(b"hello")
+    suite = tmp_path / "SuiteXM.bsa"
+    write_bsa([("meshes\\a\\a.nif", src), ("meshes\\a\\a.txt", txt)], suite)
+    flags = struct.unpack_from("<I", suite.read_bytes(), 12)[0]
+    assert not flags & 0x4 and read_bsa(suite).entries[0].compressed     # like the console suites
+    out = tmp_path / "out.bsa"
+    assert transform_bsa(suite, out, lambda p, d: (p, d + b"!") if p.endswith(".txt") else (p, d)) == 1
+    arc = read_bsa(out)
+    assert {e.name: e.compressed for e in arc.entries} == {"a.nif": True, "a.txt": False}
+
+def test_removing_a_bsa_only_mod_keeps_a_suite_others_share(tmp_path):
+    """MILK case: its plugin was merged into another (the record lists no
+    plugin), only the suites it shares with the quest expansions are listed.
+    Remove must leave those suites and their ini line alone."""
+    from skynx.builder import _mods_file, load_mods, remove_mod
+    from skynx.ini import set_archive_list
+    pack = _pack(tmp_path)
+    d = tmp_path / "Quests"
+    d.mkdir()
+    (d / "Quests.esp").write_bytes(plugin_bytes(["Skyrim.esm"]))
+    add_mod(pack, d)
+    pack = Pack.open(pack.root)
+    src = tmp_path / "f.nif"
+    src.write_bytes(b"x" * 64)
+    write_bsa([("meshes\\a\\f.nif", src)], pack.data_dir / "SuiteQM.bsa")
+    ini = pack.ini_paths[0]
+    ini.write_bytes(set_archive_list(ini.read_bytes(), "sResourceArchiveList",
+                                     pack.archive_lists().get("sResourceArchiveList", []) + ["SuiteQM.bsa"]))
+    mods = load_mods(pack)
+    mods["Quests"]["bsas"] = ["SuiteQM.bsa"]
+    mods["MILK"] = {"plugins": [], "bsas": ["SuiteQM.bsa"], "merged_into": "Quests.esp"}
+    _mods_file(pack).write_text(json.dumps(mods), encoding="utf-8")
+    remove_mod(Pack.open(pack.root), "MILK")
+    pack = Pack.open(pack.root)
+    assert (pack.data_dir / "SuiteQM.bsa").exists()
+    assert "SuiteQM.bsa" in pack.archive_lists()["sResourceArchiveList"]
+    assert "MILK" not in load_mods(pack) and load_mods(pack)["Quests"]["bsas"] == ["SuiteQM.bsa"]

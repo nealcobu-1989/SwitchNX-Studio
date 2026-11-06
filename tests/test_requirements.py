@@ -733,3 +733,30 @@ def test_broken_paths_typed_by_authors():
     assert broken_path("meshes\\x\\noext", model=True)
     assert not broken_path("textures\\cubemaps\\eyecubemap.dds")
     assert not broken_path("textures\\my mod (v2)\\a.dds")
+
+
+@pytest.mark.parametrize("compress", [True, False])
+def test_blank_files_in_a_bsa(tmp_path, compress):
+    """Apothecary's meshes came out all zeros in a joined BSA (the potion showed
+    a red "!"). The deep check names them; tiny zero files (tree LOD .btt) are real."""
+    pack = new_pack(tmp_path, ["Apo.esp"])
+    plugin(data(pack) / "Apo.esp", [])
+    files = {"meshes\\magus\\apothecary\\potion.nif": bytes(40000),
+             "meshes\\magus\\apothecary\\ok.nif": nif(["textures\\a.dds"]) + bytes(40000),
+             "meshes\\terrain\\tamriel\\trees\\tamriel.4.0.0.btt": bytes(4)}
+    tmp = tmp_path / "src"
+    pairs = []
+    for i, (pth, d) in enumerate(files.items()):
+        f = tmp / str(i)
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_bytes(d)
+        pairs.append((pth, f))
+    write_bsa(pairs, data(pack) / "Apo.bsa", compress=compress)
+    pack = Pack.open(pack.root)
+    assert {e.compressed for e in read_bsa(data(pack) / "Apo.bsa").entries if e.name.endswith(".nif")} == {compress}
+    [f] = [x for x in run_audit(pack, deep=True).findings if x.code == "bsa-blank"]
+    assert f.subject == "Apo.bsa" and f.params["n"] == 1
+    assert f.items == ["meshes\\magus\\apothecary\\potion.nif"] and f.fix is None
+    for lang in ("en", "es"):
+        title, detail = f.text(lang)
+        assert "{" not in title + detail and "—" not in title + detail

@@ -36,6 +36,14 @@ Behaviors (Nemesis)
 Packing
 - The LOOT reminder before packing ignores plugins LOOT doesn't know (your own merges, mods from a pack).
 
+SkyNX Test Tools 1.2 (`extras/nxtest`)
+- New **Quests** menu, for a quest that got stuck (Switch has no console): for each quest
+  marked as active in the Journal, **Next stage** (the first later stage not done yet) or
+  **Restart quest**. Pack writes the pack's quests into `NXTest.esp` (names, stages); quests
+  are found by file and id, so `Skyrim.esm` stays its only master.
+- New **Player** menu (+1 perk point, +1000 gold, god mode, no collision to get unstuck) and
+  **Weather** menu (clear, cloudy, rain, snow, fog, back to normal).
+
 Guide skill (`switchnx-studio-guide`)
 - The SD open-files limit, how to make room (join BSAs, merge patches, Doesn't go), and new
   common situations (empty message boxes, crash in `LibAudioUpdate`, `<Error: No strings file>`,
@@ -76,6 +84,14 @@ Comportamientos (Nemesis)
 
 Empaquetar
 - El aviso de LOOT antes de empaquetar ignora los plugins que LOOT no conoce (tus merges, mods de un pack).
+
+SkyNX Test Tools 1.2 (`extras/nxtest`)
+- Nuevo menú **Quests**, para una misión trabada (la Switch no tiene consola): para cada misión
+  marcada como activa en el Diario, **Next stage** (la siguiente etapa que falta) o **Restart
+  quest**. Empaquetar escribe las misiones del pack en `NXTest.esp` (nombres, etapas); las
+  misiones se buscan por archivo e id, así que `Skyrim.esm` sigue siendo su único master.
+- Nuevo menú **Player** (+1 punto de ventaja, +1000 de oro, modo dios, sin colisión para
+  desatascarse) y menú **Weather** (despejado, nublado, lluvia, nieve, niebla, volver al normal).
 
 Skill de guía (`switchnx-studio-guide`)
 - El límite de archivos abiertos desde la SD, cómo hacer espacio (juntar BSAs, unir parches, No va)

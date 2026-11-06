@@ -683,6 +683,21 @@ def remove_mod(pack: Pack, name: str, with_users: bool = False) -> str | None:
             bsas += [b.name for b in pack.bsas_for_plugin(u["plugin"]) if b.name not in bsas]
             if u["mod"]:
                 edit_records.setdefault(u["mod"], []).append(u["plugin"])
+    # An archive other mods still list (a joined suite: SuiteX.bsa holds 22 mods)
+    # stays, with its ini line; only this mod's own archives go.
+    # (a plugin leaving its mod still takes the archives named after it; a BSA
+    # removed by its own name goes as asked). A mod record with no plugin left
+    # (its plugin merged into another, only its suites listed) is still a mod:
+    # its shared suites stay too (MILK listed SuiteQM/QT, shared with the
+    # quest expansions, and Remove would have sent them to the trash).
+    if plugins or name in mods:
+        shared: set[str] = set()
+        for rid, r in mods.items():
+            if rid in drop_records or not isinstance(r, dict):
+                continue
+            own = {b.name.lower() for p in edit_records.get(rid, []) for b in pack.bsas_for_plugin(p)}
+            shared |= {b.lower() for b in r.get("bsas", [])} - own
+        bsas = [b for b in bsas if b.lower() not in shared]
     gone = {p.lower() for p in plugins}
     label = name if not users else f"{name} + {', '.join(u['plugin'] for u in users)}"
     with Transaction(pack.root, f"Remove mod: {label}") as tx:

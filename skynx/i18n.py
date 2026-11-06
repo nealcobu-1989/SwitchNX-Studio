@@ -29,6 +29,9 @@ MSG = {
     "loot-unknown": {
         "en": ("{n} plugins LOOT doesn't know", "LOOT's masterlist has no rules for them, so it can't say where they go or what they need. In Load order, Suggest order (LOOT) lets you pick a category for each one; your choice is remembered for every pack."),
         "es": ("{n} plugins que LOOT no conoce", "La masterlist de LOOT no tiene reglas para ellos, así que no sabe dónde van ni qué necesitan. En Orden de carga, Sugerir orden (LOOT) te deja escoger una categoría para cada uno; tu elección queda guardada para todos los packs.")},
+    "loot-own-merge": {
+        "en": ("{n} merges of your own: LOOT can't place them", "They were made in this pack ({tool}), so LOOT has no rules for them and leaves them where they are. Where they go is your call, at your own risk. A merge usually goes where its last member used to load; check that the records it changes still win over what loads before it."),
+        "es": ("{n} merges propios: LOOT no sabe dónde van", "Se armaron en este pack ({tool}), así que LOOT no tiene reglas para ellos y los deja donde están. Dónde van lo decides tú, bajo tu propio riesgo. Un merge suele ir donde cargaba el último de sus plugins; revisa que los registros que cambia sigan ganándole a lo que carga antes.")},
     "loot-merge": {
         "en": ("{plugin} is a merge of {n} mods", "It was built with a merge tool and contains: {list}. LOOT's rules for those mods apply to it.{dummies_en}"),
         "es": ("{plugin} es un merge de {n} mods", "Se armó con una herramienta de merge y contiene: {list}. Las reglas de LOOT para esos mods se le aplican a él.{dummies_es}")},
@@ -233,6 +236,9 @@ MSG = {
     "bsa-dead": {
         "en": ("Files with no owner in {name}", "There are voices or faces for plugins that aren't active. They do no harm."),
         "es": ("Archivos sin dueño en {name}", "Hay voces o caras para plugins que no están activos. No estorban.")},
+    "bsa-blank": {
+        "en": ("{name}: {n} files are blank", "They have the right size, but every byte is zero. The game takes them as broken: a mesh shows a red \"!\" (the Apothecary potion case), and other files can crash it. Take those files from the mod's original download. In a project, put the fixed file in the mod's folder under Mods and Pack again; a copy fixed in Switch gets overwritten at Copy to SD."),
+        "es": ("{name}: {n} archivos están en blanco", "Tienen el tamaño correcto, pero todos sus bytes son cero. El juego los toma como dañados: una malla sale como un \"!\" rojo (el caso de la poción de Apothecary) y otros archivos lo pueden cerrar. Saca esos archivos de la descarga original del mod. En un proyecto, pon el archivo arreglado en la carpeta del mod dentro de Mods y vuelve a empacar; una copia arreglada en Switch se sobrescribe al copiar a la SD.")},
     "bsa-junk": {
         "en": ("{name}: {n} files the game doesn't use", "{name} includes script source code, backups or work images."),
         "es": ("{name}: {n} archivos que el juego no usa", "{name} trae código fuente de scripts, respaldos o imágenes de trabajo.")},
@@ -365,6 +371,12 @@ MSG = {
     "seq-missing": {
         "en": ("{name} has no SEQ file", "It has {n} Start Game Enabled quests, and the game needs seq\\{seq} (inside its BSA or loose in Data) to start them. Without it, NPC dialogue and those quests may not start. The file is what xEdit's Create SEQ File writes: the FormIDs of those quests, 4 bytes each."),
         "es": ("{name} no tiene archivo SEQ", "Tiene {n} misiones con Start Game Enabled y el juego necesita seq\\{seq} (dentro de su BSA o suelto en Data) para arrancarlas. Sin él, los diálogos de los NPC y esas misiones pueden no arrancar. El archivo es el que genera Create SEQ File en xEdit: los FormID de esas misiones, 4 bytes cada uno.")},
+    "seq-loose-only": {
+        "en": ("{n} SEQ files are only loose in Data\\seq", "The SEQ of {list} isn't inside any BSA, only in the loose seq folder. Loose SEQ files aren't confirmed on Switch: if those mods' NPCs have no dialogue in a new game, put the SEQ inside a BSA that loads (the packs we checked always do)."),
+        "es": ("{n} archivos SEQ están solo sueltos en Data\\seq", "El SEQ de {list} no está dentro de ningún BSA, solo en la carpeta seq suelta. Los SEQ sueltos no están confirmados en Switch: si en una partida nueva los NPC de esos mods no tienen diálogos, mete el SEQ dentro de un BSA que cargue (los packs que revisamos siempre lo hacen).")},
+    "start-quests": {
+        "en": ("{n} quests start with a new game", "Every Start Game Enabled quest of every mod starts at once when a game begins (or when a mod is added to a save), and Switch works through them slowly. For the first minutes the dialogue of mod followers and quest givers may not be there yet: an NPC that doesn't talk usually does after a while. Most: {top}."),
+        "es": ("{n} misiones arrancan con una partida nueva", "Todas las misiones con Start Game Enabled de todos los mods arrancan a la vez al empezar una partida (o al añadir un mod a una partida), y la Switch las procesa despacio. En los primeros minutos los diálogos de seguidores y personajes de misiones de mods pueden no estar todavía: un NPC que no habla suele hacerlo un rato después. Los que más tienen: {top}.")},
     "seq-differ": {
         "en": ("{name}'s SEQ doesn't match its quests", "seq\\{seq} in {where} lists {have} quests, and the plugin has {want} Start Game Enabled quests. Missing: {missing}. Extra: {extra}. A quest missing from the SEQ may not start."),
         "es": ("El SEQ de {name} no coincide con sus misiones", "seq\\{seq} en {where} trae {have} misiones, y el plugin tiene {want} con Start Game Enabled. Faltan: {missing}. Sobran: {extra}. Una misión que falte en el SEQ puede no arrancar.")},

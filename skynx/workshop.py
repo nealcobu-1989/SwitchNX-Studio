@@ -18,6 +18,7 @@ to the anchor's name (needed after a plugin merge).
 from __future__ import annotations
 
 import json
+import re
 import os
 import shutil
 import tempfile
@@ -234,16 +235,72 @@ def _bsa_order(pack: Pack) -> list[str]:
     return out
 
 
-def _retarget(path: str, renames: dict[str, str]) -> str:
-    """Voice / FaceGen folders named after a plugin that was merged."""
+_ID_IN_NAME = re.compile(r"^(.*_)?([0-9a-f]{8})((?:_\d+)?\.\w+)$")
+
+
+def _renumber(name: str, ids: dict[int, int] | None) -> str:
+    """A voice (..._00012345_1.fuz) or FaceGen (00012345.nif/.dds) file name
+    with the id zMerge gave the record when it had to renumber it."""
+    if not ids:
+        return name
+    m = _ID_IN_NAME.match(name)
+    if not m:
+        return name
+    fid = int(m.group(2), 16) & 0xFFFFFF
+    if fid not in ids:
+        return name
+    return f"{m.group(1) or ''}{ids[fid]:08x}{m.group(3)}"
+
+
+def _retarget(path: str, renames: dict[str, str], ids: dict[str, dict[int, int]] | None = None) -> str:
+    """Voice / FaceGen folders named after a plugin that was merged (and the
+    file names of records the merge renumbered)."""
     if not renames:
         return path
     parts = path.split("\\")
     for root in NAME_FOLDERS:
         rp = root.split("\\")
         if parts[:len(rp)] == rp and len(parts) > len(rp) and parts[len(rp)] in renames:
-            parts[len(rp)] = renames[parts[len(rp)]].lower()
+            comp = parts[len(rp)]
+            parts[len(rp)] = renames[comp].lower()
+            parts[-1] = _renumber(parts[-1], (ids or {}).get(comp))
     return "\\".join(parts)
+
+
+def _retarget_texture(path: str, renames: dict[str, str], ids: dict[str, dict[int, int]] | None) -> str:
+    """A texture path inside a FaceGen mesh (with or without 'textures\\')."""
+    segs = path.split("\\")
+    low = [x.lower() for x in segs]
+    for i, seg in enumerate(low[:-1]):
+        if seg in renames:
+            segs[i] = renames[seg]
+            segs[-1] = _renumber(segs[-1].lower(), (ids or {}).get(seg))
+            return "\\".join(segs)
+    return path
+
+
+def merge_ids(info: dict) -> dict[str, dict[int, int]]:
+    """zMerge's renumbering, per merged plugin (lowercase), from the bench info."""
+    raw = ((info or {}).get("merged") or {}).get("ids") or {}
+    return {k.lower(): {int(a, 16): int(b, 16) for a, b in v.items()} for k, v in raw.items()}
+
+
+def _fix_scripts(data: bytes, renames: dict[str, str], ids: dict[str, dict[int, int]]) -> bytes:
+    """A script that looks a merged plugin up by name (Game.GetFormFromFile):
+    renumbered ids first, then the name of the merged plugin."""
+    from . import pex as PX
+    try:
+        names = {s.lower() for s in PX.strings(data)}
+        hit = {c: n for c, n in renames.items() if c in names}
+        if not hit:
+            return data
+        for comp in hit:
+            if ids.get(comp):
+                data, _done = PX.patch_formids(data, comp, ids[comp])
+        data, _n = PX.rename_plugins(data, hit)
+    except Exception:  # noqa: BLE001  (a script it can't read stays as it is)
+        pass
+    return data
 
 
 def merge_plan(bench: Pack, anchor: str | None = None, retarget: dict[str, str] | None = None) -> dict:
@@ -260,6 +317,7 @@ def merge_plan(bench: Pack, anchor: str | None = None, retarget: dict[str, str] 
     if anchor is not None and anchor.lower() not in bench.plugins:
         raise WorkshopError(f"{anchor} isn't on the bench.", f"{anchor} no está en la mesa.")
     ren = {k.lower(): v for k, v in (retarget or {}).items()}
+    ids = merge_ids(load(bench.root) or {}) if ren else {}
     seen: dict[str, str] = {}
     overlaps: dict[str, list[str]] = {}
     files = 0
@@ -268,7 +326,7 @@ def merge_plan(bench: Pack, anchor: str | None = None, retarget: dict[str, str] 
     for name in order:
         arc = read_bsa(bench.data_dir / name)
         for e in arc.entries:
-            p = _retarget(e.path.lower(), ren)
+            p = _retarget(e.path.lower(), ren, ids)
             if p in seen and seen[p] != name:
                 overlaps.setdefault(p, [seen[p]]).append(name)
             else:
@@ -304,6 +362,7 @@ def merge_bsas(bench: Pack, tx, anchor: str | None = None, name: str | None = No
     else:
         main_name, tex_name = Path(anchor).stem, Path(anchor).stem + " - Textures"
     ren = {k.lower(): v for k, v in (retarget or {}).items()}
+    ids = merge_ids(load(bench.root) or {}) if ren else {}
     work = Path(tempfile.mkdtemp(prefix="skynx-join-", dir=str(bench.root)))
     try:
         latest: dict[str, tuple[str, Path]] = {}      # archive path -> (spelling, temp file)
@@ -313,17 +372,19 @@ def merge_bsas(bench: Pack, tx, anchor: str | None = None, name: str | None = No
             tick(bname, i, len(order))
             src = bench.data_dir / bname
             arc = read_bsa(src)
-            any_compressed |= arc.compressed_default
+            any_compressed |= arc.compressed_default or any(e.compressed for e in arc.entries)
             with src.open("rb") as f:
                 for e in arc.entries:
-                    path = _retarget(e.path.lower(), ren)
+                    path = _retarget(e.path.lower(), ren, ids)
                     data = arc.read_file(e, f)
                     if path.endswith(".nif") and path.startswith("meshes\\actors\\character\\facegendata\\facegeom\\") and ren:
                         from . import nif as NIF
                         try:
-                            data, _k = NIF.replace_texture_folders(data, ren)
+                            data, _k = NIF.replace_texture_paths(data, lambda t: _retarget_texture(t, ren, ids))
                         except NIF.NifError:
                             pass
+                    elif path.endswith(".pex") and ren:
+                        data = _fix_scripts(data, ren, ids)
                     tmpf = work / f"{n}"
                     n += 1
                     tmpf.write_bytes(data)
@@ -411,6 +472,21 @@ def merged_components(plugin_path: Path) -> list[str]:
         return []
 
 
+def zmerge_ids(folder: Path) -> dict[str, dict[int, int]]:
+    """zMerge's map.json (in 'merge - <name>'): the records it had to give a
+    new FormID, per merged plugin (lowercase name -> {old id: new id})."""
+    out: dict[str, dict[int, int]] = {}
+    for m in Path(folder).glob("merge - */map.json"):
+        try:
+            raw = json.loads(m.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for plugin, mp in (raw or {}).items():
+            if isinstance(mp, dict) and mp:
+                out[plugin.lower()] = {int(a, 16): int(b, 16) for a, b in mp.items()}
+    return out
+
+
 def bring_merge(bench: Pack, folder: Path, tx) -> dict:
     """Take a zMerge / Merge Plugins result (a folder with the merged plugin
     and whatever it produced) onto the bench. The plugins it says it contains
@@ -453,8 +529,10 @@ def bring_merge(bench: Pack, folder: Path, tx) -> dict:
         tx.write_bytes(path, C.reorder(raw, entries))
     for name in inside:
         tx.trash(bench.data_dir / name)
+    ids = zmerge_ids(folder)
     info = load(bench.root) or {}
     info["merged"] = {"plugin": plugin.name, "components": comps, "inside": inside, "extras": extras,
+                      "ids": {k: {f"{a:06X}": f"{b:06X}" for a, b in v.items()} for k, v in ids.items()},
                       "from": str(folder), "when": time.strftime("%Y-%m-%d %H:%M:%S")}
     tx.write_bytes(bench.root / ".skynx" / BENCH_FILE, json.dumps(info, indent=1, ensure_ascii=False).encode("utf-8"))
     return {"plugin": plugin.name, "components": comps, "inside": inside, "extras": extras,
