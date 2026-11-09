@@ -400,3 +400,87 @@ def check_audio(pack: Pack, add, cache, progress=None) -> None:
     for src, items in by_src.items():
         add("audio-broken", "aviso", "audio", "audio-broken", src,
             {"name": _label(labels, src), "n": len(items)}, items[:EXAMPLES])
+
+
+def gone_names(pack: Pack) -> list[str]:
+    """Plugin names this project used to have and doesn't any more: the old
+    names of plugins renamed in the Doctor (renames.json) or when their mod was
+    converted, and plugins merged into another (mods.json). A script that looks one of them up by name finds nothing."""
+    names: set[str] = set()
+    try:
+        from .bsafix import load_renames
+        names.update(v for v in load_renames(pack).values() if isinstance(v, str))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from .builder import load_mods
+        for rec in load_mods(pack).values():
+            src = rec.get("source") if isinstance(rec, dict) else None
+            if isinstance(src, dict):
+                names.update(c for c in (src.get("components") or []) if isinstance(c, str))
+            ren = rec.get("renamed") if isinstance(rec, dict) else None
+            if isinstance(ren, dict):            # renamed when the mod was converted
+                names.update(v for v in ren.values() if isinstance(v, str))
+    except Exception:  # noqa: BLE001
+        pass
+    present = {n.lower() for n in pack.data_files}
+    return sorted(n for n in names if n.lower().endswith((".esp", ".esm", ".esl")) and n.lower() not in present)
+
+
+def check_gone_names(pack: Pack, add, cache, progress=None) -> None:
+    """Scripts and script properties that still name a plugin the project
+    renamed or merged away."""
+    olds = gone_names(pack)
+    if not olds:
+        return
+    from . import pex as PEX
+    from .rename import _name_rx
+    from .bsafix import _vmad_names
+    from .records import vmad_mentions
+    say = progress or (lambda *_: None)
+    rx = _name_rx(olds)
+    needles = [o.lower().encode("cp1252", "replace") for o in olds]
+    longer = sorted((n.lower() for n in pack.data_files
+                     if any(o.lower() in n.lower() and o.lower() != n.lower() for o in olds)), key=len, reverse=True)
+
+    def hit(text: str) -> bool:
+        low = text.lower()
+        for n in longer:
+            low = low.replace(n, " ")
+        return bool(rx.search(low))
+
+    items: list[str] = []
+    named: set[str] = set()
+    sources = script_sources(pack, cache)
+    for i, (name, pex) in enumerate(sources):
+        say("Scripts", i, len(sources))
+        bpath = pack.bsas.get(name.lower())
+        arc = cache.get(bpath) if bpath else None
+        fh = bpath.open("rb") if bpath else None
+        try:
+            for path, ref in pex.items():
+                raw = _read(arc, fh, ref)
+                if not raw or not any(nd in raw.lower() for nd in needles):
+                    continue
+                try:
+                    texts = PEX.strings(raw)
+                except Exception:  # noqa: BLE001
+                    continue
+                for t_ in texts:
+                    if hit(t_):
+                        items.append(f"{name}: {path.split(chr(92))[-1]}: {t_}")
+                        named.update(m.lower() for m in rx.findall(t_))
+        finally:
+            if fh:
+                fh.close()
+    for h in pack.plugins.values():
+        p = pack.data_dir / h.name
+        if _vmad_names(p, olds):
+            for _t, fid, text in vmad_mentions(p, olds):
+                if hit(text):
+                    items.append(f"{h.name} [{fid:08X}]: {text}")
+                    named.update(m.lower() for m in rx.findall(text))
+    if items:
+        add("script-gone-name", "aviso", "requirements", "script-gone-name", "scripts-gone-names",
+            {"n": len(items), "names": ", ".join(o for o in olds if o.lower() in named)},
+            items=items[:40] + ([f"(+{len(items) - 40})"] if len(items) > 40 else []))

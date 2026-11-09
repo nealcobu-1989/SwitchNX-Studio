@@ -1529,10 +1529,10 @@ def _budget(st: dict, bring: list[dict], cc_added: list[str], problems: list, su
                     "ini-over", "block",
                     f"{key} in {n} would be {chars} characters; the limit is {ARCHIVE_LIST_LIMIT}.",
                     f"{key} en {n} quedaría en {chars} caracteres; el límite es {ARCHIVE_LIST_LIMIT}.",
-                    fix=("Pick fewer mods with BSAs loaded from the ini, or shorten BSA names (Koka's tip: "
+                    fix=("Pick fewer mods with BSAs loaded from the ini, or shorten BSA names (for example "
                          "'Mod - Meshes.bsa' to '1M.bsa').",
-                         "Elige menos mods con BSA cargados desde el ini, o acorta nombres de BSA (consejo "
-                         "de Koka: 'Mod - Meshes.bsa' a '1M.bsa')."), ini=n, key=key))
+                         "Elige menos mods con BSA cargados desde el ini, o acorta nombres de BSA (por "
+                         "ejemplo 'Mod - Meshes.bsa' a '1M.bsa')."), ini=n, key=key))
     for key in sorted(missing_keys):
         problems.append(_problem("ini-key-missing", "block",
                                  f"No base ini has {key}, so some BSAs wouldn't load.",
@@ -1545,9 +1545,9 @@ def _budget(st: dict, bring: list[dict], cc_added: list[str], problems: list, su
     lo, hi = RAM_FOR_MODS
     if tex > hi:
         status = "over"
-        text = [f"Textures need about {tex / MB:.0f} MB; Koka measured only {lo // MB}-{hi // MB} MB left for "
+        text = [f"Textures need about {tex / MB:.0f} MB; console tests measured only {lo // MB}-{hi // MB} MB left for "
                 "mods on Switch. Expect crashes or missing textures.",
-                f"Las texturas necesitan unos {tex / MB:.0f} MB; Koka midió que en la Switch quedan solo "
+                f"Las texturas necesitan unos {tex / MB:.0f} MB; en pruebas de consola quedaron solo "
                 f"{lo // MB}-{hi // MB} MB para mods. Puede cerrarse o faltar texturas."]
         big = sorted(bring, key=lambda it: -(it["_v"]["tex_bytes"] or 0))[:3]
         suggestions.append({"code": "textures", "remove": [_pick_ref(i["_e"], i["_v"]) for i in big], "text": [
@@ -1557,15 +1557,15 @@ def _budget(st: dict, bring: list[dict], cc_added: list[str], problems: list, su
         problems.append(_problem("ram-over", "warn", *text))
     elif tex > lo:
         status = "tight"
-        text = [f"Textures need about {tex / MB:.0f} MB, close to the {lo // MB}-{hi // MB} MB Koka measured "
+        text = [f"Textures need about {tex / MB:.0f} MB, close to the {lo // MB}-{hi // MB} MB measured "
                 "for mods on Switch.",
-                f"Las texturas necesitan unos {tex / MB:.0f} MB, cerca de los {lo // MB}-{hi // MB} MB que Koka "
-                "midió para mods en la Switch."]
+                f"Las texturas necesitan unos {tex / MB:.0f} MB, cerca de los {lo // MB}-{hi // MB} MB medidos "
+                "para mods en la Switch."]
     else:
         status = "ok"
-        text = [f"Textures need about {tex / MB:.0f} MB (Koka measured {lo // MB}-{hi // MB} MB left for mods "
+        text = [f"Textures need about {tex / MB:.0f} MB (console tests measured {lo // MB}-{hi // MB} MB left for mods "
                 "on Switch).",
-                f"Las texturas necesitan unos {tex / MB:.0f} MB (Koka midió {lo // MB}-{hi // MB} MB libres para "
+                f"Las texturas necesitan unos {tex / MB:.0f} MB (en pruebas de consola quedaron {lo // MB}-{hi // MB} MB libres para "
                 "mods en la Switch)."]
     return {"ccc": ccc, "inis": inis, "bsas": n_bsas, "plugins": len(plugins), "size": size,
             "tex_bytes": tex, "tex_unknown": unknown,

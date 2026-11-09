@@ -11,6 +11,7 @@ what broke Auri's voice. Here every place we know of is updated together:
   scene sequences                     seq\\Mod.seq
   localized strings                   strings\\Mod_english.strings (and dl/il)
   scripts                             "Mod.esp" literals in .pex (pex.py)
+  script properties                   string properties in VMAD (records.py)
   text configs (json, ini, ...)       exact file-name matches
 
 The tree is a staging copy, never the user's files. Paths are lowercase
@@ -26,6 +27,7 @@ from pathlib import Path
 from . import nif as NIF
 from . import pex as PEX
 from .plugin import rename_master_bytes
+from .records import VMAD_ERRORS, may_name, rename_in_vmad, vmad_mentions
 
 PLUGIN_EXT = (".esp", ".esm", ".esl")
 NAME_FOLDERS = ("sound\\voice",
@@ -213,7 +215,7 @@ def apply(tree: Path, mapping: dict[str, str], log: list | None = None) -> dict:
     Returns counters per kind."""
     log = log if log is not None else []
     counts = {"plugins": 0, "masters": 0, "folders": 0, "seq": 0, "strings": 0,
-              "nif": 0, "pex": 0, "text": 0}
+              "nif": 0, "pex": 0, "text": 0, "vmad": 0, "left": []}
     mapping = {o: n for o, n in mapping.items() if o != n}
     if not mapping:
         return counts
@@ -236,6 +238,21 @@ def apply(tree: Path, mapping: dict[str, str], log: list | None = None) -> dict:
             if n:
                 p.write_bytes(out)
                 counts["masters"] += n
+    # 2b. script properties that hold a renamed plugin's file name
+    unread: list[str] = []
+    for p in tree.iterdir():
+        if p.is_file() and p.suffix.lower() in PLUGIN_EXT:
+            raw = p.read_bytes()
+            if not may_name(raw, list(mapping)):
+                continue
+            try:
+                out, n = rename_in_vmad(raw, low)
+            except VMAD_ERRORS:          # a damaged record: leave the plugin as it is, and say so
+                unread.append(p.name)
+                continue
+            if n:
+                p.write_bytes(out)
+                counts["vmad"] += n
     # 3. folders named after the plugin
     for base in NAME_FOLDERS:
         parent = tree
@@ -306,7 +323,74 @@ def apply(tree: Path, mapping: dict[str, str], log: list | None = None) -> dict:
             if out is not None and out != raw:
                 p.write_bytes(out)
                 counts["text"] += 1
+    # 7. what still names an old plugin and couldn't be changed safely
+    news = {str(n).lower() for n in mapping.values()}
+    counts["left"] = [f"{u}: script properties couldn't be read" for u in unread] + leftovers(
+        tree, [o for o in mapping if o.lower().endswith(PLUGIN_EXT) and o.lower() not in news])
     return counts
+
+
+def _name_rx(names) -> re.Pattern:
+    alts = "|".join(re.escape(n) for n in sorted(names, key=len, reverse=True))
+    return re.compile(r"(?<![A-Za-z0-9_])(" + alts + r")(?![A-Za-z0-9_])", re.I)
+
+
+def leftovers(tree: Path, old_names: list[str]) -> list[str]:
+    """Places inside `tree` that still name one of `old_names` after a rename:
+    a script string that holds the name inside a longer text, a script
+    property, a text config the safe pattern didn't match. Each is
+    'relative path: text'. Names of plugins present in the tree don't count
+    ("Patch.esp" inside "Other - Patch.esp")."""
+    olds = [o for o in old_names if o]
+    if not olds:
+        return []
+    present = {p.name.lower() for p in tree.iterdir() if p.is_file() and p.suffix.lower() in PLUGIN_EXT}
+    rx = _name_rx(olds)
+    out: list[str] = []
+
+    longer = sorted((n for n in present if any(o.lower() in n and o.lower() != n for o in olds)),
+                    key=len, reverse=True)
+
+    def hit(text: str) -> bool:
+        low_ = text.lower()
+        for n in longer:              # "Other - Patch.esp" is not "Patch.esp"
+            low_ = low_.replace(n, " ")
+        return bool(rx.search(low_))
+
+    for p in tree.rglob("*"):
+        if not p.is_file():
+            continue
+        ext = p.suffix.lower()
+        rel = str(p.relative_to(tree))
+        try:
+            if ext == ".pex":
+                for s_ in PEX.strings(p.read_bytes()):
+                    if hit(s_):
+                        out.append(f"{rel}: {s_}")
+            elif ext in PLUGIN_EXT and p.parent == tree:
+                if not may_name(p.read_bytes(), olds):
+                    continue
+                for _t, _f, text in vmad_mentions(p, olds):
+                    if hit(text):
+                        out.append(f"{rel}: {text}")
+            elif ext in TEXT_EXT:
+                raw = p.read_bytes()
+                text = ""
+                for enc, bom in (("utf-8-sig", b"\xef\xbb\xbf"), ("utf-16", b"\xff\xfe"),
+                                 ("utf-8", b""), ("cp1252", b"")):
+                    if bom and not raw.startswith(bom):
+                        continue
+                    try:
+                        text = raw.decode(enc)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                for line in text.splitlines():
+                    if hit(line):
+                        out.append(f"{rel}: {line.strip()[:120]}")
+        except Exception:  # noqa: BLE001
+            continue
+    return out
 
 
 def rename_masters(raw: bytes, low: dict[str, str]) -> tuple[bytes, int]:

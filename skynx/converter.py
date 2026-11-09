@@ -885,8 +885,18 @@ def convert(pack: Pack, an: Analysis, options: dict, tools: Toolset, progress=No
         if alias.lower() != final.lower():
             folder_map[alias] = final
             renamed.setdefault(final, old)
-    if RN.apply(data, {**an.masters_map, **folder_map, **mapping})["folders"]:
+    rn = RN.apply(data, {**an.masters_map, **folder_map, **mapping})
+    if rn["folders"]:
         _rescan_assets(an)   # voice/FaceGen folders moved: refresh their paths
+    if rn["left"]:
+        shown = "; ".join(rn["left"][:5]) + (" …" if len(rn["left"]) > 5 else "")
+        an.notes.append(_note(
+            f"After the rename, {len(rn['left'])} place(s) still name the old plugin or couldn't be "
+            f"read: {shown}. A name inside a longer text is left as it is on purpose. If a script uses "
+            "it to look the plugin up, that check will fail; test it in game.",
+            f"Después del renombre, {len(rn['left'])} lugar(es) todavía nombran el plugin viejo o no se "
+            f"pudieron leer: {shown}. Un nombre dentro de un texto más largo se deja así a propósito. Si "
+            "un script lo usa para buscar el plugin, esa revisión fallará; pruébalo en el juego.", "warn"))
     if an.mode == "SE":
         from .edition import adapt_bytes_for_se, cc_masters, cc_note
         for n in final_names:

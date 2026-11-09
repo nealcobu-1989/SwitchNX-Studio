@@ -296,6 +296,21 @@ def _blank_entry(arc: BsaArchive, e, fh) -> bool:
         return False
 
 
+def _nif_stream(head: bytes) -> int | None:
+    """Bethesda stream version of a NIF from its first bytes: 83 is Skyrim LE
+    (the 2011 game, NiTriShape), 100 is Special Edition (BSTriShape)."""
+    if not head.startswith(b"Gamebryo File Format"):
+        return None
+    k = head.find(b"\n")
+    if k < 0 or len(head) < k + 18:
+        return None
+    ver, = struct.unpack_from("<I", head, k + 1)
+    if ver != 0x14020007:
+        return None
+    user, _blocks, stream = struct.unpack_from("<III", head, k + 6)
+    return stream if user == 12 else None
+
+
 def _content_scan(bpath: Path, arc: BsaArchive, deep: bool) -> dict | None:
     try:
         st = bpath.stat()
@@ -307,7 +322,7 @@ def _content_scan(bpath: Path, arc: BsaArchive, deep: bool) -> dict | None:
     if not deep:
         return None
     out = {"tex": 0, "tex_count": 0, "pc_dds": 0, "audio_pc": 0, "diet_before": 0, "diet_after": 0,
-           "rgba_facetint": 0, "formats": Counter(), "audio": Counter(), "blank": []}
+           "rgba_facetint": 0, "formats": Counter(), "audio": Counter(), "blank": [], "le_nif": []}
     with bpath.open("rb") as fh:
         for e in arc.entries:
             low = e.name.lower()
@@ -331,6 +346,12 @@ def _content_scan(bpath: Path, arc: BsaArchive, deep: bool) -> dict | None:
                     out["pc_dds"] += 1
                 if info.fmt.startswith("RGBA8") and "facetint" in e.folder.lower():
                     out["rgba_facetint"] += info.est_bytes
+            elif low.endswith(".nif"):
+                try:
+                    if _nif_stream(arc.read_head(e, 128, fh)) == 83:
+                        out["le_nif"].append(e.path)
+                except Exception:  # noqa: BLE001
+                    pass
             elif low.endswith((".fuz", ".xwm", ".wav", ".mcadpcm")):
                 try:
                     kind = classify_audio(low, arc.read_head(e, 32768, fh))
@@ -804,6 +825,11 @@ def run_audit(pack: Pack, deep: bool = True, progress=None, vanilla_dir=None,
             audio_counter.update(scan["audio"])
             rgba_facetint += scan["rgba_facetint"]
             mod["scanned"] = True
+            le = scan.get("le_nif") or []
+            if le:
+                add("mesh-le", "info", "bsa", "mesh-le", bpath.name,
+                    {"name": bpath.name, "n": len(le)},
+                    items=le[:30] + ([f"(+{len(le) - 30})"] if len(le) > 30 else []))
             blank = scan.get("blank") or []
             if blank:
                 add("bsa-blank", "critico", "bsa", "bsa-blank", bpath.name,
@@ -894,6 +920,7 @@ def run_audit(pack: Pack, deep: bool = True, progress=None, vanilla_dir=None,
         from . import scriptcheck as SC
         SC.check_scripts(pack, add, cache, vpex, active, say)
         SC.check_audio(pack, add, cache, say)
+        SC.check_gone_names(pack, add, cache, say)
     # A BSA the ini asks for that isn't there: what matters is whether its files
     # are, not its name (converters often join several BSAs into one). With the
     # base game known, the requirement check just above looked for every script,

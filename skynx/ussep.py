@@ -104,7 +104,7 @@ def install(pack: Pack, folder: Path | str | None, variant: str) -> dict:
     files = [Path(v["plugin"])] + [folder / b for b in info["bsas"]]
     from .recipe import source_block
     prov = source_block(folder, kind="ussep", files=files, variant=variant)
-    rep = add_mod(pack, folder, mod_id=f"USSEP (KokaNX, {variant})",
+    rep = add_mod(pack, folder, mod_id=f"USSEP (Switch, {variant})",
                   meta={"ussep": variant, "source": prov}, files=files, first=True)
     rep.notes[:0] = notes
     return rep

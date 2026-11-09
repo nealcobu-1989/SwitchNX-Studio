@@ -177,8 +177,8 @@ MSG = {
         "en": ("{ini}: repeated key {key}", "It appears on lines {lines}; the last one wins."),
         "es": ("{ini}: clave repetida {key}", "Aparece en las líneas {lines}; vale la última.")},
     "ini-long": {
-        "en": ("{key} is over 1024 characters", "{ini}: {n} characters. According to Koka, the game cuts anything past 1024."),
-        "es": ("{key} pasa de 1024 caracteres", "{ini}: {n} caracteres. Según Koka, el juego corta lo que pasa de 1024.")},
+        "en": ("{key} is over 1024 characters", "{ini}: {n} characters. Tested on the console: the game cuts anything past 1024."),
+        "es": ("{key} pasa de 1024 caracteres", "{ini}: {n} caracteres. Probado en la consola: el juego corta lo que pasa de 1024.")},
     "ini-nearly": {
         "en": ("{key} is almost full", "{ini}: {n} of 1024 characters."),
         "es": ("{key} casi llena", "{ini}: {n} de 1024 caracteres.")},
@@ -204,8 +204,8 @@ MSG = {
         "en": ("No language ini in the pack", "Skyrim.ini lists mod BSAs in {key}, but the console's own Skyrim_<language>.ini replaces that list. Add the language ini from the clean dump (DBI) so these load: {items}."),
         "es": ("El pack no tiene ini de idioma", "Skyrim.ini lista BSA de mods en {key}, pero el Skyrim_<idioma>.ini de la consola reemplaza esa lista. Agrega el ini de idioma desde los inis limpios (DBI) para que carguen: {items}.")},
     "tex-diet": {
-        "en": ("{name} can save texture memory", "About {before} of textures could go down to about {after}: uncompressed textures (like FaceGen tints) become BC, and oversized ones shrink to Koka's sizes. It needs texconv (and NvnTexpkg for best results)."),
-        "es": ("{name} puede ahorrar memoria de texturas", "Cerca de {before} de texturas podrían bajar a unos {after}: las texturas sin comprimir (como los tintes faciales) pasan a BC y las muy grandes bajan a los tamaños de Koka. Necesita texconv (y NvnTexpkg para el mejor resultado).")},
+        "en": ("{name} can save texture memory", "About {before} of textures could go down to about {after}: uncompressed textures (like FaceGen tints) become BC, and oversized ones shrink to the classic sizes (1K, 2K for actors). It needs texconv (and NvnTexpkg for best results)."),
+        "es": ("{name} puede ahorrar memoria de texturas", "Cerca de {before} de texturas podrían bajar a unos {after}: las texturas sin comprimir (como los tintes faciales) pasan a BC y las muy grandes bajan a los tamaños clásicos (1K, 2K para personajes). Necesita texconv (y NvnTexpkg para el mejor resultado).")},
     "tint-broken": {
         "en": ("{name}: {n} faces point to a missing tint", "Their FaceGen mesh asks for a tint under '{old}', which no archive in the pack has. The face can look dark or wrong. If the tint exists under the mesh's own plugin folder, the fix points it there."),
         "es": ("{name}: {n} caras apuntan a un tinte que no existe", "Su malla FaceGen pide un tinte en '{old}', que ningún archivo del pack tiene. La cara puede verse oscura o rara. Si el tinte existe en la carpeta del propio plugin, el arreglo la apunta ahí.")},
@@ -239,9 +239,15 @@ MSG = {
     "bsa-blank": {
         "en": ("{name}: {n} files are blank", "They have the right size, but every byte is zero. The game takes them as broken: a mesh shows a red \"!\" (the Apothecary potion case), and other files can crash it. Take those files from the mod's original download. In a project, put the fixed file in the mod's folder under Mods and Pack again; a copy fixed in Switch gets overwritten at Copy to SD."),
         "es": ("{name}: {n} archivos están en blanco", "Tienen el tamaño correcto, pero todos sus bytes son cero. El juego los toma como dañados: una malla sale como un \"!\" rojo (el caso de la poción de Apothecary) y otros archivos lo pueden cerrar. Saca esos archivos de la descarga original del mod. En un proyecto, pon el archivo arreglado en la carpeta del mod dentro de Mods y vuelve a empacar; una copia arreglada en Switch se sobrescribe al copiar a la SD.")},
+    "mesh-le": {
+        "en": ("{name}: {n} meshes are from the 2011 game (LE)", "Switch runs the Special Edition engine, and it reads most LE meshes fine: a tested pack plays with more than a thousand of them, bodies and creatures included. If a model from this mod shows up invisible, stretched, or the game closes when it appears, these are the suspects. Resave them with Cathedral Assets Optimizer on \"Full optimization\" (the lighter presets leave them as they are) and Pack again."),
+        "es": ("{name}: {n} mallas son del juego de 2011 (LE)", "Switch corre el motor de Special Edition, y lee bien casi todas las mallas LE: un pack probado juega con más de mil, cuerpos y criaturas incluidos. Si un modelo de este mod sale invisible, estirado, o el juego se cierra cuando aparece, estas son las sospechosas. Vuelve a guardarlas con Cathedral Assets Optimizer en \"Full optimization\" (los perfiles más livianos las dejan igual) y empaca otra vez.")},
+    "script-gone-name": {
+        "en": ("{n} script texts name a plugin that isn't there any more", "This project renamed or merged {names}. These scripts or script properties still look for the old name: usually a mod checking whether another one is installed (GetModByName, GetFormFromFile) to turn on an extra, like a follower's spells for a magic mod. With the name gone, that extra stays off; the rest of the mod works. A rename changes whole names in scripts by itself; a merge can't, because the merged plugin's records may have new IDs. If the extra matters, keep that plugin out of the merge or under its old name."),
+        "es": ("{n} textos de scripts nombran un plugin que ya no está", "Este proyecto renombró o fusionó {names}. Estos scripts o propiedades de script todavía buscan el nombre viejo: casi siempre un mod que revisa si otro está instalado (GetModByName, GetFormFromFile) para encender un extra, como los hechizos de un seguidor para un mod de magia. Sin ese nombre, el extra queda apagado; el resto del mod funciona. Un renombre cambia solo los nombres completos en los scripts; una fusión no puede, porque los registros del plugin fusionado pueden tener IDs nuevos. Si el extra importa, deja ese plugin fuera de la fusión o con su nombre viejo.")},
     "bsa-junk": {
-        "en": ("{name}: {n} files the game doesn't use", "{name} includes script source code, backups or work images."),
-        "es": ("{name}: {n} archivos que el juego no usa", "{name} trae código fuente de scripts, respaldos o imágenes de trabajo.")},
+        "en": ("{name}: {n} files the game doesn't use", "{name} includes script source code, backups, work images or files a computer leaves behind (.DS_Store, Thumbs.db)."),
+        "es": ("{name}: {n} archivos que el juego no usa", "{name} trae código fuente de scripts, respaldos, imágenes de trabajo o archivos que deja el computador (.DS_Store, Thumbs.db).")},
     "tex-pc": {
         "en": ("{name}: {n} textures in PC format", "They aren't in Switch's own format (DFvN). The Toolkit without the SDK leaves them like this and forces DXT5; if they show up purple or black, this is the suspect."),
         "es": ("{name}: {n} texturas en formato PC", "No están en el formato propio de Switch (DFvN). El Toolkit sin SDK las deja así y las fuerza a DXT5; si se ven moradas o negras, este es el sospechoso.")},
@@ -349,10 +355,10 @@ MSG = {
     "mod-unconverted": {
         "en": ("{name} looks like a PC mod", "{detail}"),
         "es": ("{name} parece un mod de PC", "{detail}")},
-    # KokaNX (Oct 2026)
+    # console tests (Oct 2026)
     "ini-memory-mods": {
-        "en": ("{n} mod BSAs are kept in memory", "sArchiveToLoadInMemoryList in {inis} holds {items}{size_en}. KokaNX tested in October 2026 that animation BSAs only need sResourceArchiveList: the in-memory list just keeps them in RAM for the whole game. The game's own entries stay as they are. If T-poses or animation stutters show up after taking them out, put them back in that list."),
-        "es": ("{n} BSA de mods se quedan en memoria", "sArchiveToLoadInMemoryList en {inis} tiene {items}{size_es}. KokaNX probó en octubre de 2026 que los BSA de animaciones solo necesitan sResourceArchiveList: la lista en memoria solo los deja en la RAM durante toda la partida. Las entradas del juego quedan como están. Si después de sacarlos aparecen T-poses o tirones en las animaciones, vuelve a ponerlos en esa lista.")},
+        "en": ("{n} mod BSAs are kept in memory", "sArchiveToLoadInMemoryList in {inis} holds {items}{size_en}. Console tests in October 2026 showed that animation BSAs only need sResourceArchiveList: the in-memory list just keeps them in RAM for the whole game. The game's own entries stay as they are. If T-poses or animation stutters show up after taking them out, put them back in that list."),
+        "es": ("{n} BSA de mods se quedan en memoria", "sArchiveToLoadInMemoryList en {inis} tiene {items}{size_es}. Pruebas en consola de octubre de 2026 mostraron que los BSA de animaciones solo necesitan sResourceArchiveList: la lista en memoria solo los deja en la RAM durante toda la partida. Las entradas del juego quedan como están. Si después de sacarlos aparecen T-poses o tirones en las animaciones, vuelve a ponerlos en esa lista.")},
     "font-in-bsa": {
         "en": ("A font's FontConfig.txt is inside {bsa}", "Font mods only take effect with Interface\\FontConfig.txt loose in Data (the Switch port of Sovngarde says so in its readme). Inside a BSA the game keeps its own font."),
         "es": ("El FontConfig.txt de una fuente está dentro de {bsa}", "Las fuentes solo se aplican con Interface\\FontConfig.txt suelto en Data (el port de Switch de Sovngarde lo dice en su readme). Dentro de un BSA el juego sigue con su fuente.")},
@@ -363,8 +369,8 @@ MSG = {
         "en": ("{name} uses record IDs the Switch may not understand", "{n} of its records use IDs below 0x800, the extended ESL range Skyrim PC added in version 1.6.1130 (December 2023). The Switch version came out in 2022, so it probably can't load them: things from this mod may be missing or the game may crash. Test it on the console; if it fails, use a version of the mod from before December 2023."),
         "es": ("{name} usa IDs de registro que la Switch quizá no entiende", "{n} de sus registros usan IDs por debajo de 0x800, el rango ESL extendido que Skyrim PC agregó en la versión 1.6.1130 (diciembre de 2023). La versión de Switch salió en 2022, así que probablemente no los carga: pueden faltar cosas del mod o cerrarse el juego. Pruébalo en la consola; si falla, usa una versión del mod anterior a diciembre de 2023.")},
     "plugin-hedr171-se": {
-        "en": ("{name} has header version 1.71", "It was saved with a newer Creation Kit (1.6.1130 or later), and the SE version can ignore plugins with version 1.71. KokaNX's fix is to set it to 1.70 in SSEEdit; this does the same and changes only the 4 bytes of that number.{low_en}"),
-        "es": ("{name} tiene encabezado versión 1.71", "Se guardó con un Creation Kit más nuevo (1.6.1130 o posterior), y la versión SE puede ignorar plugins con versión 1.71. El arreglo de KokaNX es ponerle 1.70 en SSEEdit; esto hace lo mismo y solo cambia los 4 bytes de ese número.{low_es}")},
+        "en": ("{name} has header version 1.71", "It was saved with a newer Creation Kit (1.6.1130 or later), and the SE version can ignore plugins with version 1.71. The usual fix is to set it to 1.70 in SSEEdit; this does the same and changes only the 4 bytes of that number.{low_en}"),
+        "es": ("{name} tiene encabezado versión 1.71", "Se guardó con un Creation Kit más nuevo (1.6.1130 o posterior), y la versión SE puede ignorar plugins con versión 1.71. El arreglo de siempre es ponerle 1.70 en SSEEdit; esto hace lo mismo y solo cambia los 4 bytes de ese número.{low_es}")},
     "hedr-low": {
         "en": ("", " Careful: {k} of its own records use FormIDs below 0x800, which only version 1.71 allows. With 1.70 those records may not work; renumber them in SSEEdit (Compact FormIDs for ESL) before saving it as 1.70."),
         "es": ("", " Ojo: {k} de sus propios registros usan FormID por debajo de 0x800, que solo permite la versión 1.71. Con 1.70 esos registros pueden fallar; conviene renumerarlos en SSEEdit (Compact FormIDs for ESL) antes de dejarlo en 1.70.")},
@@ -381,11 +387,11 @@ MSG = {
         "en": ("{name}'s SEQ doesn't match its quests", "seq\\{seq} in {where} lists {have} quests, and the plugin has {want} Start Game Enabled quests. Missing: {missing}. Extra: {extra}. A quest missing from the SEQ may not start."),
         "es": ("El SEQ de {name} no coincide con sus misiones", "seq\\{seq} en {where} trae {have} misiones, y el plugin tiene {want} con Start Game Enabled. Faltan: {missing}. Sobran: {extra}. Una misión que falte en el SEQ puede no arrancar.")},
     "ussep-bsa-order": {
-        "en": ("USSEP's BSAs aren't right after the game's", "KokaNX's advice: USSEP's BSAs go right after the game's own BSAs in each list (Skyrim.ini sResourceArchiveList for scripts, meshes and animations; Skyrim_en.ini sResourceArchiveList2 for textures and voices), so every other mod can override its files. Out of place in: {where}."),
-        "es": ("Los BSA de USSEP no van justo después de los del juego", "Consejo de KokaNX: los BSA de USSEP van justo después de los BSA del juego en cada lista (sResourceArchiveList de Skyrim.ini para scripts, mallas y animaciones; sResourceArchiveList2 de Skyrim_en.ini para texturas y voces), así cualquier otro mod puede reemplazar sus archivos. Fuera de lugar en: {where}.")},
+        "en": ("USSEP's BSAs aren't right after the game's", "Tested on the console: USSEP's BSAs go right after the game's own BSAs in each list (Skyrim.ini sResourceArchiveList for scripts, meshes and animations; Skyrim_en.ini sResourceArchiveList2 for textures and voices), so every other mod can override its files. Out of place in: {where}."),
+        "es": ("Los BSA de USSEP no van justo después de los del juego", "Probado en la consola: los BSA de USSEP van justo después de los BSA del juego en cada lista (sResourceArchiveList de Skyrim.ini para scripts, mallas y animaciones; sResourceArchiveList2 de Skyrim_en.ini para texturas y voces), así cualquier otro mod puede reemplazar sus archivos. Fuera de lugar en: {where}.")},
     "ussep-first": {
-        "en": ("USSEP isn't the first mod in {list}", "KokaNX's advice: {name} goes first in the load list, right after the Creation Club entries (AE) or at the top of Plugins (SE), so every other mod and patch loads after it. Now {n} mods load before it, starting with {before}."),
-        "es": ("USSEP no es el primer mod de {list}", "Consejo de KokaNX: {name} va primero en la lista de carga, justo después de las entradas del Creation Club (AE) o arriba del todo en Plugins (SE), así todos los demás mods y parches cargan después. Ahora cargan {n} mods antes, empezando por {before}.")},
+        "en": ("USSEP isn't the first mod in {list}", "The usual rule: {name} goes first in the load list, right after the Creation Club entries (AE) or at the top of Plugins (SE), so every other mod and patch loads after it. Now {n} mods load before it, starting with {before}."),
+        "es": ("USSEP no es el primer mod de {list}", "La regla de siempre: {name} va primero en la lista de carga, justo después de las entradas del Creation Club (AE) o arriba del todo en Plugins (SE), así todos los demás mods y parches cargan después. Ahora cargan {n} mods antes, empezando por {before}.")},
 }
 
 # Fix labels and preview lines
@@ -453,6 +459,7 @@ PREVIEW = {
     "pv-rewrite": {"en": "{file}: rewrite cleanly (same names, same order)", "es": "{file}: reescribir con formato limpio (mismos nombres, mismo orden)"},
     "pv-ini-short": {"en": "ini: the list gets {n} characters shorter; the BSAs load in the same place, only their names change", "es": "ini: la lista queda {n} caracteres más corta; los BSA cargan en el mismo lugar, solo cambia su nombre"},
     "pv-rename": {"en": "Data: '{old}' → '{new}'", "es": "Data: '{old}' → '{new}'"},
+    "pv-vmad": {"en": "{file}: script properties that say '{old}' will say '{new}'", "es": "{file}: las propiedades de script que dicen '{old}' van a decir '{new}'"},
     "pv-master": {"en": "{file}: update its master to '{new}'", "es": "{file}: actualizar su master a '{new}'"},
     "pv-voices": {"en": "{file}: voices from '…\\{old}\\' → '…\\{new}\\'", "es": "{file}: voces de '…\\{old}\\' → '…\\{new}\\'"},
     "pv-rebuild": {"en": "The BSA is rebuilt copying the same data; the original stays in the history.", "es": "Se reconstruye el BSA copiando los mismos datos; el original queda en el historial."},

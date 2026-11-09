@@ -77,7 +77,7 @@ def test_provenance_archive_and_folder(pack, tmp_path):
 
 def test_provenance_ussep(tmp_path):
     root = create_project(tmp_path / "p", "AE", INIS, "none", ussep="All_CC", ussep_dir=USSEP_FX)
-    rec = load_mods(Pack.open(root))["USSEP (KokaNX, All_CC)"]
+    rec = load_mods(Pack.open(root))["USSEP (Switch, All_CC)"]
     s = rec["source"]
     assert rec["ussep"] == "All_CC"
     assert s["kind"] == "ussep" and s["variant"] == "All_CC" and s["path"] == str(USSEP_FX)

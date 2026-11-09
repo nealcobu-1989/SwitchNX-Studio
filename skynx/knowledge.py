@@ -89,7 +89,8 @@ PLUGIN_FOLDER_ROOTS = (
     "meshes\\actors\\character\\facegendata\\facegeom\\",
     "textures\\actors\\character\\facegendata\\facetint\\",
 )
-JUNK_IN_BSA = (".psc", ".bak", ".tga", ".txt.bak", ".log", ".xcf", ".psd")
+JUNK_IN_BSA = (".psc", ".bak", ".tga", ".txt.bak", ".log", ".xcf", ".psd",
+               ".ds_store", "thumbs.db", "desktop.ini", ".png")   # png: only interface\ uses them
 
 # KokaNX's tests and advice (Oct 2026) ------------------------------------------
 # * Animation BSAs only need sResourceArchiveList. sArchiveToLoadInMemoryList

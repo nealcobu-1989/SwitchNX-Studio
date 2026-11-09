@@ -2352,8 +2352,8 @@ class Api:
                         {"kind": "folder", "which": "vanilla_dir"}))
         us = scan(self._folder("ussep_dir"))
         items.append(it("ussep", "game", "optional", bool(us["variants"]), us["folder"],
-                        "KokaNX's USSEP for Switch, to start new packs with it.",
-                        "El USSEP de KokaNX para Switch, para empezar packs nuevos con él.",
+                        "USSEP for Switch, to start new packs with it.",
+                        "El USSEP para Switch, para empezar packs nuevos con él.",
                         {"kind": "folder", "which": "ussep_dir"}))
         items.append(it("library", "game", "always", True, self._library_root(),
                         "The Library: your packs, mods and converted mods.",

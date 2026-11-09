@@ -41,7 +41,7 @@ def test_new_pack_with_ussep_all_cc(tmp_path):
     main = parse_ini((pack.base_romfs / "Skyrim.ini").read_bytes())
     assert {"USSEP.bsa", "USSEPA.bsa"} <= set(main.archive_list("sResourceArchiveList"))
     assert "USSEPA.bsa" not in main.archive_list("sArchiveToLoadInMemoryList")   # KokaNX, Oct 2026
-    assert "USSEP (KokaNX, All_CC)" in load_mods(pack)
+    assert "USSEP (Switch, All_CC)" in load_mods(pack)
     crit = [f for f in run_audit(pack, deep=False).findings if f.severity == "critico"]
     assert not crit, [f.code for f in crit]
 

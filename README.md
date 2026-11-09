@@ -83,6 +83,29 @@ The **Help** button opens the full manual at the page you're on (`docs/manual.en
 - **SkyNX Mods** on the console reads the info the app writes to the SD: what each mod is, what it
   weighs, who needs it. Changes made on the console can be brought back into the project.
 
+How each part works, step by step and file by file: [docs/how-it-works.en.md](docs/how-it-works.en.md).
+
+## What's original here and what isn't
+
+**Written for this project.** All the code in `skynx/`, `app/` and `extras/`: the readers and
+writers for BSA archives, plugin records, NIF meshes, Papyrus `.pex` scripts and script properties,
+the converter, the Doctor and its fixes, the safe rename, the load order and ini handling, the copy
+to SD with its backups, the undo history, SkyNX Mods, the Test Tools mod and the overlay mode.
+
+**Learned from others, and credited.**
+- The Switch sound container layouts and the animation conversion method come from the Skyrim NX
+  Toolkit (MIT, Antony Marshall and Zappastuff). They are reimplemented in `skynx/nxaudio.py` and
+  `skynx/havok.py`.
+- The texture formats for PC DDS and the classic size rules (1K, 2K for actors) follow KokaNX's
+  SNXT-DDS rules. The other diets and the native Switch format path were built and tested here.
+- The console's limits (the `.ccc` bytes, the ini characters, the memory left for mods, how BSAs
+  load) come from community testing and from our own tests on the console. Each rule in the Doctor
+  says what was seen and where.
+
+**Not ours, and not included.** texconv, VGAudioCli, ffmpeg, NvnTexpkg, HavokBehaviorPostProcess
+and LOOT's masterlist run as separate programs or data that you provide (see the notices). No game
+files, no SDK files and no mods.
+
 ## Limits worth knowing
 
 | Limit | Value |
@@ -141,9 +164,7 @@ To share a whole pack, use **Pack recipe**: it lists the mods with their Nexus l
 
 Made by **nealcobu**, with a lot of help from Claude (Anthropic).
 
-A huge thank you to **KokaNX**, whose work on Skyrim for Switch (the memory and `.ccc` limits,
-how BSAs load, behaviors, USSEP for Switch) is behind many of the app's rules. Thanks also to
-Antony Marshall and Zappastuff (Skyrim NX Toolkit), ElminsterAU and the xEdit team, Mator (zEdit),
+Thanks to Antony Marshall and Zappastuff (Skyrim NX Toolkit), ElminsterAU and the xEdit team, Mator (zEdit),
 the LOOT team, Arthmoor and the USSEP team, masagrator (Status Monitor Deux), Microsoft (texconv),
 Alex Barney (VGAudio), the FFmpeg project, and everyone who converts, tests and shares modpacks.
 

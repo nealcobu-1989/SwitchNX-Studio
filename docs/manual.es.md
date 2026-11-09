@@ -34,7 +34,7 @@ Abrir, revisar y arreglar proyectos funciona sin nada instalado. Lo demás depen
 | 7-Zip | Abre descargas `.rar` | Solo abren los rar que el `tar.exe` de Windows puede leer; los demás se extraen a mano. |
 | Inis de la consola | `Skyrim.ini`, `Skyrim_en.ini` y `Skyrim_aoc.ccc` limpios | No puedes empezar un proyecto desde cero (desde un modpack o desde la SD sí). |
 | BSA y .esm del juego | Los archivos del juego base | El Doctor no puede saber si faltan scripts, meshes y texturas, y SSEEdit no puede abrir un proyecto. |
-| USSEP (KokaNX) | El parche no oficial para proyectos nuevos | Los proyectos nuevos empiezan sin él. |
+| USSEP (Switch) | El parche no oficial para proyectos nuevos | Los proyectos nuevos empiezan sin él. |
 | SSEEdit, zEdit, NifSkope, BAE, Cathedral Assets Optimizer | Herramientas externas que la app abre por ti | Sus botones quedan apagados. zEdit hace falta para **Juntar plugins**. |
 | Masterlist de LOOT | Reglas de orden y nombres de mods | Sin **Sugerir orden (LOOT)**; menos mods reconocen su página de Nexus. Se descarga sola la primera vez. |
 | API key de Nexus | Nombres, versiones y actualizaciones de Nexus | Sin nombres ni actualizaciones de Nexus, y sin el botón Mod Manager Download. |
@@ -172,7 +172,10 @@ Con los BSA del juego configurados, el Doctor también revisa si de verdad está
 - **Scripts del juego que reemplazan los mods** (Dato): así funcionan muchos mods; la lista dice cuáles, para tener sospechosos.
 - **Scripts que buscan plugins que no cargan** (Dato): `[off]` está en el pack pero apagado, `[gone]` no está. Casi siempre es una revisión opcional; importa después de quitar un mod.
 - **Mods que mantienen scripts corriendo solos** (Dato): cuántos scripts corren, cuántos se repiten con temporizador y cuántos reaccionan a eventos frecuentes. Es una guía para listas con muchos scripts.
+- **Scripts que nombran un plugin que este proyecto renombró o fusionó** (Revisar): el plugin ya no está con ese nombre, así que la revisión del script no lo encuentra y ese extra queda apagado (los hechizos de un seguidor para un mod de magia fusionado en una suite). Un renombre cambia solo los nombres completos; estos tienen el nombre dentro de un texto más largo, o el plugin se fusionó.
 - **Sonidos dañados** (Revisar): lee completas las voces y la música y avisa las que están cortadas o no cuadran. Lo leído se guarda por BSA, así que la siguiente revisión solo lee lo que cambió.
+
+**Mallas del juego de 2011 (LE).** La revisión a fondo también lista, como Info, las mallas guardadas para el Skyrim original. Casi todas funcionan en Switch. Si un modelo sale invisible o estirado, vuelve a guardar las de la lista con Cathedral Assets Optimizer en "Full optimization" (los perfiles más livianos las dejan igual) y empaca otra vez.
 
 **Plugin vacío con su BSA.** Pasar el BSA al ini libera bytes del `.ccc`, pero lo del ini carga antes. Antes de ofrecerlo, el Doctor revisa archivo por archivo quién ganaría después. Si alguno cambia de ganador (las texturas de Noble Skyrim le ganan a los mods que cargan antes que su plugin; en el ini perderían), dice que lo dejes así, muestra cada archivo y no ofrece el arreglo. Si nada cambia, el arreglo es seguro.
 
@@ -235,9 +238,9 @@ En una mesa el menú cambia a: Mesa, Convertir mods, Juntar BSA, Juntar plugins,
 Convertir mods » **Un mod** (desde el taller, o dentro de un proyecto, donde el mod entra directo).
 
 1. Elige la carpeta o el comprimido del mod (`.zip`, `.7z`, `.rar`) y oprime **Leer el mod**. Todavía no se escribe nada.
-2. Elige la **Dieta de texturas**: **Dieta Switch 1** (la que viene por defecto: 1K, mapas y objetos menores a 512), **Reglas de Koka** (1K en general, 2K para personajes), **Extrema** (512, para packs con muchos mods) o **Tamaño original** (sin regla de tamaño). Encima de cualquiera, **Tamaño máximo** limita el lado más grande a 256, 512, 1K, 2K o 4K. Para texturas a 2K en todo, elige Tamaño original y 2K. Las texturas nunca se agrandan.
-3. Elige el formato: **Formato nativo de Switch (NvnTexpkg)**, y **BC1** en texturas opacas (la mitad de memoria). Sin NvnTexpkg las texturas quedan en DDS forzado a DXT5, como hace Koka.
-4. Elige el **Empacado**. El que viene por defecto, **Un BSA en los inis**, pone todo en un BSA de nombre corto y lo anota en la lista del ini que tenga más espacio: la forma estable de cargar de Koka, con un nombre por mod en vez de dos, así caben más mods en el ini. Si ninguna lista tiene espacio, el mod queda en un BSA con el nombre del plugin y la app te avisa. Las otras opciones: BSA con el nombre del plugin, un solo BSA con el nombre del plugin, o dos BSA en los inis (meshes y texturas aparte, como hace Koka).
+2. Elige la **Dieta de texturas**: **Dieta Switch 1** (la que viene por defecto: 1K, mapas y objetos menores a 512), **Reglas clásicas** (1K en general, 2K para personajes), **Extrema** (512, para packs con muchos mods) o **Tamaño original** (sin regla de tamaño). Encima de cualquiera, **Tamaño máximo** limita el lado más grande a 256, 512, 1K, 2K o 4K. Para texturas a 2K en todo, elige Tamaño original y 2K. Las texturas nunca se agrandan.
+3. Elige el formato: **Formato nativo de Switch (NvnTexpkg)**, y **BC1** en texturas opacas (la mitad de memoria). Sin NvnTexpkg las texturas quedan en DDS forzado a DXT5, como hacen casi todos los packs de consola.
+4. Elige el **Empacado**. El que viene por defecto, **Un BSA en los inis**, pone todo en un BSA de nombre corto y lo anota en la lista del ini que tenga más espacio: la forma estable de cargar, con un nombre por mod en vez de dos, así caben más mods en el ini. Si ninguna lista tiene espacio, el mod queda en un BSA con el nombre del plugin y la app te avisa. Las otras opciones: BSA con el nombre del plugin, un solo BSA con el nombre del plugin, o dos BSA en los inis (meshes y texturas aparte).
 5. Revisa los nombres de los plugins. La app propone nombres que Google Drive no daña, y **Corto** ahorra bytes del `.ccc`.
 6. Oprime **Convertir y agregar al pack**. Arriba se ven el `.ccc` y la memoria de texturas con el mod incluido.
 
@@ -319,7 +322,7 @@ En SE la lista de carga es el archivo `Plugins` y no tiene el límite de bytes d
 | Lista de carga `Skyrim_aoc.ccc` (AE) | 4096 bytes; el juego deja de leer lo que pase de ahí | Barra de abajo, Mods, Convertir, Catálogo |
 | Listas de archivos del ini (`sResourceArchiveList`, `sResourceArchiveList2`) | 1024 caracteres cada una; el ini del idioma (`Skyrim_en.ini`) manda sobre `Skyrim.ini`. Cerca del límite, el Doctor ofrece acortar los nombres de los BSA de mods que carga el ini (cargan en el mismo lugar, solo cambia el nombre) | Barra de abajo, Doctor |
 | BSA | 1,9 GB por archivo; al juntar BSA la app parte en varios | Juntar BSA |
-| Orden de los BSA | Depende del tipo de archivo. **Scripts:** un BSA del ini le gana a uno que carga por el nombre de su plugin, al revés que en PC. Visto en la consola: el `USSEP.bsa` de Koka (en el ini) le quitó sus scripts a Growl y a Sacrosanct, y el `Skyrim - Misc.bsa` del juego le quitó a Quick Start el suyo; con sus BSA en el ini, después de los otros, funcionaron. **Texturas y modelos:** como en PC; las texturas de Noble Skyrim, que carga por su plugin, se ven sobre las del juego | Doctor (mods que pierden scripts), Revisar conflictos de archivos |
+| Orden de los BSA | Depende del tipo de archivo. **Scripts:** un BSA del ini le gana a uno que carga por el nombre de su plugin, al revés que en PC. Visto en la consola: un `USSEP.bsa` del ini le quitó sus scripts a Growl y a Sacrosanct, y el `Skyrim - Misc.bsa` del juego le quitó a Quick Start el suyo; con sus BSA en el ini, después de los otros, funcionaron. **Texturas y modelos:** como en PC; las texturas de Noble Skyrim, que carga por su plugin, se ven sobre las del juego | Doctor (mods que pierden scripts), Revisar conflictos de archivos |
 | IDs de registro por debajo de 0x800 (rango ESL extendido, Skyrim PC 1.6.1130, dic. 2023) | La versión de Switch es de 2022 y probablemente no los carga; HEDR 1.71 sin esos IDs sí carga | Agregar mods, Doctor |
 | Plugins de SKSE (`.dll`) | No funcionan en Switch | Convertir (quedan por fuera), Versiones para Switch |
 | Texturas | Formato NVN de Switch, o DDS de PC forzado a DXT5; memoria limitada | Texturas y audio, Dieta |
@@ -337,7 +340,7 @@ Todo vive en `C:\SkyNX`. La app no escribe fuera de estas carpetas.
 | `C:\SkyNX\Tools` | texconv, ffmpeg, VGAudioCli, NvnTexpkg y sus DLL; SSEEdit, zEdit, NifSkope, BAE y CAO en subcarpetas. |
 | `C:\SkyNX\Vanilla\INIs` | Las inis limpias de la consola para proyectos nuevos. |
 | `C:\SkyNX\Vanilla\BSAs` | Los archivos del juego de `romfs\Data`: sus BSA (`Skyrim - *.bsa`, `cc*.bsa`) y sus plugins (`.esm`, `.esl`). Con la lista del juego ya armada, los BSA se pueden borrar menos `Skyrim - Interface.bsa`, que trae los textos del juego; los plugins se quedan para xEdit. |
-| `C:\SkyNX\Base Mods\USSEP` | El USSEP de KokaNX (All_CC, No_CC, SurvivalMode). |
+| `C:\SkyNX\Base Mods\USSEP` | El USSEP para Switch (All_CC, No_CC, SurvivalMode). |
 | `C:\SkyNX\Library\Projects` | Tus proyectos, una carpeta cada uno. |
 | `C:\SkyNX\Library\Mods` | Mods sueltos tal como llegaron. |
 | `C:\SkyNX\Library\Converted` | Cada mod que la app convierte o guarda desde una mesa. |

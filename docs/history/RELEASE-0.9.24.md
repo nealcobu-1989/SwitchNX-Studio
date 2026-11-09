@@ -44,8 +44,10 @@ Guide skill (`switchnx-studio-guide`)
 - Stuck quests with Test Tools, and Survival Mode's level up after sleeping.
 - One mod's message box empty while the others work (NX Quick Save), blank files in a BSA, and the rule
   for hand fixes in a project: edit the file in `Mods`, never in `Switch` (Copy to SD builds it again).
-- Mod files open from the SD: 108 starts fine but leaves texts empty once playing (hunger, low
-  magicka, the standing stones). Aim for 104 or fewer.
+- Empty message boxes, missing dialogue options and conversations that end when you skip a line:
+  the script engine falling behind, not the file count. One script-heavy mod (Helgen Reborn) on a
+  full list did it; taking it out and giving Papyrus room in Skyrim.ini (budgets 3.0, stack memory
+  307200; the console's ini had one budget key misspelled) fixed it.
 - **zMerge and the first plugin**: with Clean it can't drop the first plugin as a master; Clobber
   builds without a warning but leaves broken references (84 in a merge of 33 patches). The fix
   is a decoy plugin first, then checking every reference. Plugins with navmeshes of their own
@@ -131,8 +133,11 @@ Skill de guía (`switchnx-studio-guide`)
 - El letrero vacío de un solo mod mientras los demás funcionan (NX Quick Save), los archivos en blanco dentro de un BSA,
   y la regla para arreglos a mano en un proyecto: se edita el archivo en `Mods`, nunca en `Switch`
   (Copiar a la SD lo vuelve a armar).
-- Archivos de mods abiertos desde la SD: con 108 el juego arranca bien, pero ya jugando deja
-  textos vacíos (hambre, magicka baja, las piedras guardianas). Lo seguro es 104 o menos.
+- Cuadros de mensaje vacíos, opciones de diálogo que faltan y conversaciones que se cortan al
+  saltar una línea: es el motor de scripts atrasado, no la cantidad de archivos. Un mod pesado en
+  scripts (Helgen Reborn) sobre una lista llena bastó; quitarlo y darle espacio a Papyrus en
+  Skyrim.ini (presupuestos 3.0, memoria de pilas 307200; el ini de la consola traía una clave mal
+  escrita) lo arregló.
 - **zMerge y el primer plugin**: con Clean no logra quitar el primer plugin como master; Clobber
   construye sin avisar pero deja referencias rotas (84 en un merge de 33 parches). El arreglo es un
   plugin señuelo de primero y revisar cada referencia. Los plugins con navmesh propio se quedan

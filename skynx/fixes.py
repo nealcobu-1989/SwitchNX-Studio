@@ -119,6 +119,8 @@ def preview(pack: Pack, fix: dict, lang: str = "en") -> dict:
             lines.append(t("pv-inside", file=b, old=fix["from"], new=fix["to"]))
         for d in plan["dependents"]:
             lines.append(t("pv-master", file=d, new=fix["to"]))
+        for d in plan.get("scripts", []):
+            lines.append(t("pv-vmad", file=d, old=fix["from"], new=fix["to"]))
         if plan["list"]:
             lines.append(t("pv-replace", file=ln, old=fix["from"], new=fix["to"]))
         lines.append(t("pv-saves"))

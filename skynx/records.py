@@ -277,6 +277,182 @@ def parse_vmad(d: bytes, rtype: str = "") -> tuple[list[str], int]:
     return names, 0
 
 
+# --------------------------------------------------------- VMAD string properties
+# A script property of type string (2) or string array (12) can hold a plugin
+# file name, read at run time with Game.GetFormFromFile or GetModByName. A
+# rename has to change those too, and nothing else in the VMAD.
+
+def _value_spans(d: bytes, o: int, ptype: int, out: list) -> int:
+    if ptype == 2:
+        s, end = _wstr(d, o)
+        out.append((o, end, s))
+        return end
+    if ptype == 12:
+        if o + 4 > len(d):
+            raise RecordError("array past the end")
+        cnt = _U32.unpack_from(d, o)[0]
+        o += 4
+        for _ in range(cnt):
+            s, end = _wstr(d, o)
+            out.append((o, end, s))
+            o = end
+        return o
+    return _skip_value(d, o, ptype)
+
+
+def _scripts_spans(d: bytes, o: int, ver: int, out: list) -> int:
+    count = _U16.unpack_from(d, o)[0]
+    o += 2
+    for _ in range(count):
+        _name, o = _wstr(d, o)
+        if ver >= 4:
+            o += 1
+        pc = _U16.unpack_from(d, o)[0]
+        o += 2
+        for _ in range(pc):
+            _pn, o = _wstr(d, o)
+            if o >= len(d):
+                raise RecordError("property past the end")
+            ptype = d[o]
+            o += 1
+            if ver >= 4:
+                o += 1
+            o = _value_spans(d, o, ptype, out)
+    return o
+
+
+def vmad_string_spans(d: bytes, rtype: str = "") -> list[tuple[int, int, str]]:
+    """(start, end, text) of every string property value in a VMAD: the
+    attached scripts and, for quests, the scripts on aliases. Fragment
+    sections hold no properties. What can't be read is left out."""
+    out: list = []
+    if len(d) < 6:
+        return out
+    ver, objfmt = struct.unpack_from("<hh", d, 0)
+    if not 2 <= ver <= 6 or objfmt not in (1, 2):
+        return out
+    try:
+        o = _scripts_spans(d, 4, ver, out)
+        if rtype != "QUST" or o >= len(d):
+            return out
+        nfrag = _U16.unpack_from(d, o + 1)[0]
+        _f, o = _wstr(d, o + 3)
+        for _ in range(nfrag):
+            o += 2 + 2 + 4 + 1
+            _s, o = _wstr(d, o)
+            _fn, o = _wstr(d, o)
+        nal = _U16.unpack_from(d, o)[0]
+        o += 2
+        for _ in range(nal):
+            o += 8
+            aver = struct.unpack_from("<h", d, o)[0]
+            o += 4
+            if not 2 <= aver <= 6:
+                break
+            o = _scripts_spans(d, o, aver, out)
+    except (RecordError, struct.error, IndexError):
+        pass
+    return out
+
+
+def vmad_replace_strings(d: bytes, rtype: str, low: dict[str, str]) -> tuple[bytes, int]:
+    """A VMAD with every string property equal (ignoring case) to a key of
+    `low` replaced by its value. VMAD has no inner sizes, so only the strings
+    change. Returns (data, how many)."""
+    enc: dict[str, bytes] = {}
+    for k, v in low.items():
+        try:
+            enc[k] = v.encode("cp1252")
+        except UnicodeEncodeError:      # a name scripts can't hold: leave those as they are
+            continue
+    spans = [sp for sp in vmad_string_spans(d, rtype) if sp[2].lower() in enc]
+    if not spans:
+        return d, 0
+    out = bytearray()
+    last = 0
+    for start, end, val in spans:
+        out += d[last:start]
+        b = enc[val.lower()]
+        out += _U16.pack(len(b)) + b
+        last = end
+    out += d[last:]
+    return bytes(out), len(spans)
+
+
+# What can go wrong reading a damaged plugin; callers skip that plugin.
+VMAD_ERRORS = (RecordError, zlib.error, struct.error, UnicodeError, IndexError)
+
+# Record types that never carry scripts: their compressed data needn't be opened.
+_NO_SCRIPTS = {b"LAND", b"NAVM", b"NAVI", b"WRLD", b"PGRD", b"STAT", b"TXST", b"LSCR",
+               b"IMAD", b"RACE", b"LCTN", b"GRAS", b"LTEX", b"ADDN", b"ARMA", b"HDPT"}
+
+
+def may_name(raw: bytes, names: Iterable[str]) -> bool:
+    """Cheap test before parsing a plugin's scripts: True when its bytes hold
+    one of `names` (any case), or when it has compressed records that could
+    hold scripts (their text can't be seen without opening them)."""
+    low = raw.lower()
+    for n in names:
+        for v in {n, n.lower(), n.upper()}:
+            try:
+                b = v.encode("cp1252")
+            except UnicodeEncodeError:
+                continue
+            if b in raw or b.lower() in low:
+                return True
+    pos, end = 0, len(raw)
+    while pos + 24 <= end:
+        typ = raw[pos:pos + 4]
+        if typ == b"GRUP":
+            pos += 24
+            continue
+        size, flags = struct.unpack_from("<II", raw, pos + 4)
+        if flags & 0x00040000 and typ not in _NO_SCRIPTS:
+            return True
+        pos += 24 + size
+    return False
+
+
+def rename_in_vmad(raw: bytes, low: dict[str, str]) -> tuple[bytes, int]:
+    """A plugin with the script properties that name a plugin of `low`
+    (lowercase old -> new) renamed. Returns (bytes, properties changed)."""
+    total = 0
+
+    def edit(typ, _fid, data):
+        nonlocal total
+        if b"VMAD" not in data:
+            return None
+        v = next((val for sig, val in iter_subrecords(data) if sig == "VMAD"), None)
+        if v is None:
+            return None
+        nv, n = vmad_replace_strings(v, typ, low)
+        if not n or len(nv) > 0xFFFF:
+            return None
+        total += n
+        return replace_subrecord(data, "VMAD", nv)
+
+    out, _changed = rewrite_records(raw, edit)
+    return (out, total) if total else (raw, 0)
+
+
+def vmad_mentions(src, names: Iterable[str]) -> list[tuple[str, int, str]]:
+    """(record type, FormID, text) of every script property whose text names
+    one of `names` (a plugin file name): equal to it or containing it."""
+    keys = [n.lower() for n in names]
+    out = []
+    for r in iter_records(src, has=[b"VMAD"]):
+        if r.data is None:
+            continue
+        v = next((val for sig, val in r.subrecords() if sig == "VMAD"), None)
+        if not v:
+            continue
+        for _s, _e, text in vmad_string_spans(v, r.type):
+            t = text.lower()
+            if any(k in t for k in keys):
+                out.append((r.type, r.formid, text))
+    return out
+
+
 def _zstr(b: bytes) -> str:
     return b.split(b"\x00", 1)[0].decode("cp1252", "replace")
 

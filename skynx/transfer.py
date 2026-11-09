@@ -907,9 +907,9 @@ def _plan_inis(plan: TransferPlan) -> None:
             if len(", ".join(cur)) > ARCHIVE_LIST_LIMIT:
                 raise TransferError(
                     f"{key} in {p.name} would go over {ARCHIVE_LIST_LIMIT} characters with {bsa}. "
-                    "Bring fewer mods, or shorten BSA names (Koka's tip: 'Mod - Meshes.bsa' → '1M.bsa').",
+                    "Bring fewer mods, or shorten BSA names (for example 'Mod - Meshes.bsa' → '1M.bsa').",
                     f"{key} en {p.name} pasaría de {ARCHIVE_LIST_LIMIT} caracteres con {bsa}. "
-                    "Trae menos mods o acorta nombres de BSA (consejo de Koka: 'Mod - Meshes.bsa' → "
+                    "Trae menos mods o acorta nombres de BSA (por ejemplo 'Mod - Meshes.bsa' → "
                     "'1M.bsa').")
             current[p] = set_archive_list(current[p], key, cur)
             plan.ini_added.append((p.name, key, bsa))

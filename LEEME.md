@@ -89,6 +89,31 @@ El botón **Ayuda** abre el manual completo en la página donde estás (`docs/ma
 - **SkyNX Mods** en la consola lee lo que la app escribe en la SD: qué es cada mod, cuánto pesa,
   quién lo necesita. Lo que cambies en la consola se puede traer de vuelta al proyecto.
 
+Cómo funciona cada parte, paso a paso y archivo por archivo: [docs/how-it-works.es.md](docs/how-it-works.es.md).
+
+## Qué es original aquí y qué no
+
+**Escrito para este proyecto.** Todo el código de `skynx/`, `app/` y `extras/`: los lectores y
+escritores de archivos BSA, registros de plugins, mallas NIF, scripts Papyrus `.pex` y propiedades
+de scripts, el convertidor, el Doctor y sus arreglos, el renombre seguro, el orden de carga y el
+manejo de inis, la copia a la SD con sus respaldos, el historial para deshacer, SkyNX Mods, el mod
+Test Tools y el modo del overlay.
+
+**Aprendido de otros, y con crédito.**
+- La estructura de los contenedores de sonido de Switch y el método para convertir animaciones
+  vienen del Skyrim NX Toolkit (MIT, Antony Marshall y Zappastuff). Están reimplementados en
+  `skynx/nxaudio.py` y `skynx/havok.py`.
+- Los formatos de textura para DDS de PC y las reglas clásicas de tamaño (1K, 2K para personajes)
+  siguen las reglas SNXT-DDS de KokaNX. Las demás dietas y el camino al formato nativo de Switch se
+  hicieron y probaron aquí.
+- Los límites de la consola (los bytes del `.ccc`, los caracteres de los inis, la memoria que queda
+  para mods, cómo cargan los BSA) salen de pruebas de la comunidad y de pruebas propias en la
+  consola. Cada regla del Doctor dice qué se vio y dónde.
+
+**Ajeno, y no incluido.** texconv, VGAudioCli, ffmpeg, NvnTexpkg, HavokBehaviorPostProcess y la
+masterlist de LOOT funcionan como programas o datos aparte que tú pones (ver los avisos). Nada de
+archivos del juego, del SDK ni mods.
+
 ## Límites que conviene saber
 
 | Límite | Valor |
@@ -148,9 +173,7 @@ compartir un pack entero usa **Receta del pack**: lista los mods con sus enlaces
 
 Hecho por **nealcobu**, con mucha ayuda de Claude (Anthropic).
 
-Un agradecimiento gigante a **KokaNX**, cuyo trabajo con Skyrim en Switch (los límites de memoria
-y del `.ccc`, cómo cargan los BSA, los behaviors, el USSEP para Switch) está detrás de muchas
-reglas de la app. Gracias también a Antony Marshall y Zappastuff (Skyrim NX Toolkit), ElminsterAU
+Gracias a Antony Marshall y Zappastuff (Skyrim NX Toolkit), ElminsterAU
 y el equipo de xEdit, Mator (zEdit), el equipo de LOOT, Arthmoor y el equipo del USSEP, masagrator
 (Status Monitor Deux), Microsoft (texconv), Alex Barney (VGAudio), el proyecto FFmpeg, y todos los
 que convierten, prueban y comparten modpacks.

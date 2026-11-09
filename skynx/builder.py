@@ -532,9 +532,9 @@ def add_mod(pack: Pack, source: Path, progress=None, mod_id: str | None = None,
                         if len(", ".join(cur)) > ARCHIVE_LIST_LIMIT:
                             raise BuildError(
                                 f"{key} in {ini_path.name} would go over 1024 characters. Shorten "
-                                "BSA names (Koka's tip: 'Mod - Meshes.bsa' → '1M.bsa').",
+                                "BSA names (for example 'Mod - Meshes.bsa' → '1M.bsa').",
                                 f"{key} en {ini_path.name} pasaría de 1024 caracteres. Acorta "
-                                "nombres de BSA (consejo de Koka: 'Mod - Meshes.bsa' → '1M.bsa').")
+                                "nombres de BSA (por ejemplo 'Mod - Meshes.bsa' → '1M.bsa').")
                         tx.write_bytes(ini_path, set_archive_list(raw, key, cur))
                         added = True
                     if added:

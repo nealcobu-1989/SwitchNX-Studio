@@ -10,7 +10,7 @@ others and keep their own licenses.
 | Barlow Condensed and Cinzel fonts | `app/web/fonts`, `extras/nxmods/romfs/fonts` | SIL Open Font License 1.1 (texts next to the fonts) |
 | LOOT's Skyrim SE masterlist (test fixture) | `tests/fixtures/loot/masterlist.yaml` | The LOOT team's masterlist license (https://github.com/loot/skyrimse) |
 | Sound container layouts and the animation conversion method | described in `skynx/nxaudio.py`, `skynx/havok.py` | Learned from the Skyrim NX Toolkit, MIT, Antony Marshall and Zappastuff |
-| Texture size rules ("Koka" preset) | `skynx/diet.py` | Credited to KokaNX in the app |
+| PC DDS texture formats and the classic size rules ("Classic rules" preset) | `skynx/texplan.py` | Rules learned from KokaNX's SNXT-DDS script, reimplemented in Python |
 
 ## In the release files
 

@@ -34,7 +34,7 @@ Opening, checking and fixing projects works with nothing installed. The rest dep
 | 7-Zip | Opens `.rar` downloads | Only rars that Windows' `tar.exe` can read will open; extract the rest by hand. |
 | Console inis | Clean `Skyrim.ini`, `Skyrim_en.ini`, `Skyrim_aoc.ccc` | You can't start a project from scratch (from a modpack or the SD still works). |
 | Game BSAs and .esm | The base game's files | The Doctor can't tell whether scripts, meshes and textures are missing, and SSEEdit can't open a project. |
-| USSEP (KokaNX) | The unofficial patch for new projects | New projects start without it. |
+| USSEP (Switch) | The unofficial patch for new projects | New projects start without it. |
 | SSEEdit, zEdit, NifSkope, BAE, Cathedral Assets Optimizer | External tools the app opens for you | Their buttons stay off. zEdit is needed for **Join plugins**. |
 | LOOT masterlist | Load order rules and mod names | No **Suggest order (LOOT)**; fewer mods get their Nexus page. It downloads itself the first time. |
 | Nexus API key | Names, versions and updates from Nexus | No Nexus names or update checks, and no Mod Manager Download button. |
@@ -172,7 +172,10 @@ With the game's BSAs set up, the Doctor also checks whether the scripts, meshes 
 - **Game scripts the mods replace** (Info): many mods work this way; the list says which, so you have suspects.
 - **Scripts that ask for plugins that aren't loaded** (Info): `[off]` is in the pack but switched off, `[gone]` isn't in it. Usually an optional check; it matters after removing a mod.
 - **Mods that keep scripts running on their own** (Info): how many scripts run, how many repeat on a timer and how many react to frequent events. A guide for lists with many scripts.
+- **Scripts that name a plugin this project renamed or merged** (Check): the plugin is gone under that name, so the script's check for it finds nothing and that extra stays off (a follower's spells for a magic mod merged into a suite). A rename fixes whole names by itself; these hold the name inside a longer text, or the plugin was merged.
 - **Damaged sounds** (Check): voices and music are read in full and the ones cut short or that don't add up are listed. What was read is kept per BSA, so the next check only reads what changed.
+
+**Meshes from the 2011 game (LE).** The full check also lists, as Info, meshes saved for the original Skyrim. Most work on Switch. If a model shows up invisible or stretched, resave the ones listed with Cathedral Assets Optimizer on "Full optimization" (the lighter presets leave them as they are) and Pack again.
 
 **Empty plugin with its BSA.** Moving the BSA to the ini frees `.ccc` bytes, but the ini loads first. Before offering it, the Doctor checks file by file who would win afterwards. If any file changes winner (Noble Skyrim's textures win over the mods that load before its plugin; in the ini they would lose), it says to leave it, lists each file and offers no fix. If nothing changes, the fix is safe.
 
@@ -235,9 +238,9 @@ On a bench the menu changes to: Bench, Convert mods, Join BSAs, Join plugins, Hi
 Convert mods » **One mod** (from the workshop, or inside a project, where the mod goes straight in).
 
 1. Pick the mod's folder or archive (`.zip`, `.7z`, `.rar`) and press **Read the mod**. Nothing is written yet.
-2. Choose the **Texture diet**: **Switch 1 diet** (the default: 1K, maps and clutter at 512), **Koka's rules** (1K in general, 2K for actors), **Extreme** (512, for packs with many mods) or **Original size** (no size rule). On top of any of them, **Maximum size** caps the largest side at 256, 512, 1K, 2K or 4K. For 2K textures everywhere, pick Original size and 2K. Textures are never enlarged.
-3. Choose the format: **Native Switch format (NvnTexpkg)**, and **BC1** for opaque textures (half the memory). Without NvnTexpkg textures stay DDS forced to DXT5, as Koka does.
-4. Choose the **Packing**. The default, **One BSA in the inis**, puts everything in one short-named BSA and lists it in whichever ini list has more room: Koka's stable way of loading, with one name per mod instead of two, so more mods fit in the ini. If neither list has room, the mod is packed in one BSA named after the plugin and the app tells you. The other choices: BSAs named after the plugin, one BSA named after the plugin, or two BSAs listed in the inis (meshes and textures apart, as Koka does).
+2. Choose the **Texture diet**: **Switch 1 diet** (the default: 1K, maps and clutter at 512), **Classic rules** (1K in general, 2K for actors), **Extreme** (512, for packs with many mods) or **Original size** (no size rule). On top of any of them, **Maximum size** caps the largest side at 256, 512, 1K, 2K or 4K. For 2K textures everywhere, pick Original size and 2K. Textures are never enlarged.
+3. Choose the format: **Native Switch format (NvnTexpkg)**, and **BC1** for opaque textures (half the memory). Without NvnTexpkg textures stay DDS forced to DXT5, as most console packs do.
+4. Choose the **Packing**. The default, **One BSA in the inis**, puts everything in one short-named BSA and lists it in whichever ini list has more room: the stable way of loading, with one name per mod instead of two, so more mods fit in the ini. If neither list has room, the mod is packed in one BSA named after the plugin and the app tells you. The other choices: BSAs named after the plugin, one BSA named after the plugin, or two BSAs listed in the inis (meshes and textures apart).
 5. Check the plugin names. The app proposes names Google Drive won't damage, and **Short** saves `.ccc` bytes.
 6. Press **Convert and add to the pack**. The top of the page shows the `.ccc` and the texture memory with the mod included.
 
@@ -319,7 +322,7 @@ On SE the load list is the `Plugins` file and has no `.ccc` byte limit.
 | Load list `Skyrim_aoc.ccc` (AE) | 4096 bytes; the game stops reading past that | Bottom bar, Mods, Convert, Catalog |
 | Ini archive lists (`sResourceArchiveList`, `sResourceArchiveList2`) | 1024 characters each; the language ini (`Skyrim_en.ini`) wins over `Skyrim.ini`. Near the limit the Doctor offers to shorten the names of the mod BSAs the ini loads (they load in the same place, only the name changes) | Bottom bar, Doctor |
 | BSA | 1.9 GB per file; joining BSAs splits into several | Join BSAs |
-| BSA order | It depends on the kind of file. **Scripts:** a BSA in the ini wins over one loaded by its plugin's name, the other way round from PC. Seen on the console: KokaNX's `USSEP.bsa` (in the ini) took Growl's and Sacrosanct's scripts, and the game's `Skyrim - Misc.bsa` took Quick Start's; with their BSAs in the ini, after the others, they worked. **Textures and meshes:** as on PC; Noble Skyrim's textures, loaded by its plugin, show over the game's | Doctor (mods losing scripts), Check file conflicts |
+| BSA order | It depends on the kind of file. **Scripts:** a BSA in the ini wins over one loaded by its plugin's name, the other way round from PC. Seen on the console: a `USSEP.bsa` listed in the ini took Growl's and Sacrosanct's scripts, and the game's `Skyrim - Misc.bsa` took Quick Start's; with their BSAs in the ini, after the others, they worked. **Textures and meshes:** as on PC; Noble Skyrim's textures, loaded by its plugin, show over the game's | Doctor (mods losing scripts), Check file conflicts |
 | Record IDs below 0x800 (extended ESL range, Skyrim PC 1.6.1130, Dec 2023) | The Switch build is from 2022 and probably can't load them; HEDR 1.71 without those IDs does load | Add mods, Doctor |
 | SKSE plugins (`.dll`) | Don't work on Switch | Convert (left out), Versions for Switch |
 | Textures | Switch NVN format, or PC DDS forced to DXT5; limited memory | Textures & audio, Diet |
@@ -337,7 +340,7 @@ Everything lives in `C:\SkyNX`. The app doesn't write outside these folders.
 | `C:\SkyNX\Tools` | texconv, ffmpeg, VGAudioCli, NvnTexpkg and its DLLs; SSEEdit, zEdit, NifSkope, BAE and CAO in subfolders. |
 | `C:\SkyNX\Vanilla\INIs` | The console's clean inis for new projects. |
 | `C:\SkyNX\Vanilla\BSAs` | The game's files from `romfs\Data`: its BSAs (`Skyrim - *.bsa`, `cc*.bsa`) and its plugins (`.esm`, `.esl`). Once the game list is built the BSAs can be deleted except `Skyrim - Interface.bsa`, which holds the game's texts; the plugins stay for xEdit. |
-| `C:\SkyNX\Base Mods\USSEP` | KokaNX's USSEP (All_CC, No_CC, SurvivalMode). |
+| `C:\SkyNX\Base Mods\USSEP` | USSEP for Switch (All_CC, No_CC, SurvivalMode). |
 | `C:\SkyNX\Library\Projects` | Your projects, one folder each. |
 | `C:\SkyNX\Library\Mods` | Loose mods as they arrived. |
 | `C:\SkyNX\Library\Converted` | Every mod the app converts or saves from a bench. |

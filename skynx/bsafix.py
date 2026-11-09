@@ -149,13 +149,36 @@ _SEQ = re.compile(r"^seq\\([^\\]+)\.seq$")
 _STR = re.compile(r"^strings\\([^\\]+)_([a-z]+)\.(strings|dlstrings|ilstrings)$")
 
 
+_VANILLA = {"skyrim.esm", "update.esm", "dawnguard.esm", "hearthfires.esm", "dragonborn.esm"}
+
+
+def data_path(pack: Pack, name: str) -> Path:
+    return pack.data_dir / name
+
+
+def _vmad_names(p: Path, names: list[str]) -> bool:
+    """Whether a script property of plugin `p` names one of `names`. Vanilla
+    masters are skipped, and a plugin is parsed only when its bytes hold the
+    name or it has compressed records that could hide it."""
+    if p.name.lower() in _VANILLA or not p.is_file():
+        return False
+    from .records import may_name, vmad_mentions
+    raw = p.read_bytes()
+    if not may_name(raw, names):
+        return False
+    try:
+        return bool(vmad_mentions(raw, names))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def rename_plan(pack: Pack, old: str, new: str) -> dict:
     """What a full plugin rename touches in this pack (for the preview)."""
     low_old = old.lower()
     stem_old = Path(old).stem.lower()
     needle = low_old.encode("cp1252", "replace")
     plan = {"plugin": None, "bsas_rename": [], "bsas_patch": [], "dependents": [], "list": False,
-            "inis": []}
+            "inis": [], "scripts": []}
     p = next((f for n, f in pack.data_files.items() if n == low_old), None)
     plan["plugin"] = p.name if p else None
     for b in pack.bsas_for_plugin(old):
@@ -192,6 +215,7 @@ def rename_plan(pack: Pack, old: str, new: str) -> dict:
     for h in pack.plugins.values():
         if any(m.lower() == low_old for m in h.masters):
             plan["dependents"].append(h.name)
+    plan["scripts"] = [h.name for h in pack.plugins.values() if _vmad_names(data_path(pack, h.name), [old])]
     plan["list"] = any(e.lstrip("#").lower() == low_old for e in pack.list_entries)
     for ini in pack.inis:
         if any(e.value.lower() == low_old for e in ini.entries if e.key.lower().startswith("stestfile")):
@@ -248,6 +272,20 @@ def safe_rename(pack: Pack, old: str, new: str, tx: Transaction, progress=None) 
         out, n = rename_masters(p.read_bytes(), low)
         if n:
             tx.write_bytes(p, out)
+    # 3b. script properties of any plugin that hold the old file name
+    from .records import VMAD_ERRORS, rename_in_vmad
+    for h in list(pack.plugins.values()):
+        p = data / (new if h.name.lower() == old.lower() else h.name)
+        if not _vmad_names(p, [old]):
+            continue
+        try:
+            out, n = rename_in_vmad(p.read_bytes(), low)
+        except VMAD_ERRORS:      # a damaged record: leave that plugin as it is
+            plan.setdefault("vmad_unread", []).append(p.name)
+            continue
+        if n:
+            tx.write_bytes(p, out)
+            plan["vmad"] = plan.get("vmad", 0) + n
     # 4. load list, sTestFile and ini archive lists
     if pack.list_path:
         raw = pack.list_path.read_bytes()
