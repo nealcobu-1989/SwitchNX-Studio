@@ -1091,15 +1091,16 @@ def _baked_text_checks(pack: Pack, add, vanilla_dir, deep: bool) -> None:
 
 
 # What the game keeps open from the SD: Atmosphère serves every mod plugin and
-# mod BSA from the card. With too many, files the game opens later (texts read
-# when a message box or a dialogue shows, streamed sounds) fail to open: empty
-# message boxes, NPCs that don't talk, a crash closing a sound that never opened.
-# Measured on Switch 1, Oct 2026: 255 failed at once, ~160 failed in heavy
-# scenes, 117 still left one message box empty, 104-108 worked.
-SD_FILES_WARN = 112
-SD_FILES_BAD = 150
-
-
+# mod BSA from the card. The game reads some texts from a plugin when they show
+# (message boxes, dialogue, notifications), so past a point those reads fail:
+# empty message boxes, missing dialogue options, NPCs that don't talk.
+# Measured on Switch 1, Nov 2026 (Pack 2026): what counts is the number of mod
+# PLUGINS, not of BSAs. 103 files (84 plugins) failed often; 94 files with 83
+# plugins still lost one message box; 99 files with 80 or 82 plugins and 94
+# files with 76 plugins worked. Joining BSAs didn't help; merging plugins did.
+# (The older note, "104-108 files worked", came from packs with fewer plugins.)
+PLUGINS_WARN = 80        # from here: close to the edge
+PLUGINS_BAD = 83         # from here: texts fail in game
 def sd_open_files(pack: Pack) -> dict:
     """{"plugins", "ini", "plugin_bsas", "total"}: mod files the game opens from the SD."""
     from . import console as CO
@@ -1123,9 +1124,10 @@ def _sd_open_files(pack: Pack, add) -> None:
         c = sd_open_files(pack)
     except Exception:  # noqa: BLE001
         return
-    sev = "critico" if c["total"] > SD_FILES_BAD else "aviso" if c["total"] > SD_FILES_WARN else "info"
+    sev = "critico" if c["plugins"] >= PLUGINS_BAD else "aviso" if c["plugins"] >= PLUGINS_WARN else "info"
     add("sd-open-files", sev, "list", f"sd-open-files-{sev}", "sd-files",
-        {"n": c["total"], "plugins": c["plugins"], "bsas": c["ini"] + c["plugin_bsas"], "warn": SD_FILES_WARN})
+        {"n": c["total"], "plugins": c["plugins"], "bsas": c["ini"] + c["plugin_bsas"],
+         "warn": PLUGINS_WARN, "bad": PLUGINS_BAD})
 
 
 def _font_checks(pack: Pack, add, active_bsas, cache) -> None:

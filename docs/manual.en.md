@@ -321,6 +321,7 @@ On SE the load list is the `Plugins` file and has no `.ccc` byte limit.
 | --- | --- | --- |
 | Load list `Skyrim_aoc.ccc` (AE) | 4096 bytes; the game stops reading past that | Bottom bar, Mods, Convert, Catalog |
 | Ini archive lists (`sResourceArchiveList`, `sResourceArchiveList2`) | 1024 characters each; the language ini (`Skyrim_en.ini`) wins over `Skyrim.ini`. Near the limit the Doctor offers to shorten the names of the mod BSAs the ini loads (they load in the same place, only the name changes) | Bottom bar, Doctor |
+| Mod plugins | About 80. From 83 the game starts to lose texts it reads from plugins when they show: empty message boxes, missing dialogue options. BSAs barely count, ESL plugins do | Doctor (mod plugins) |
 | BSA | 1.9 GB per file; joining BSAs splits into several | Join BSAs |
 | BSA order | It depends on the kind of file. **Scripts:** a BSA in the ini wins over one loaded by its plugin's name, the other way round from PC. Seen on the console: a `USSEP.bsa` listed in the ini took Growl's and Sacrosanct's scripts, and the game's `Skyrim - Misc.bsa` took Quick Start's; with their BSAs in the ini, after the others, they worked. **Textures and meshes:** as on PC; Noble Skyrim's textures, loaded by its plugin, show over the game's | Doctor (mods losing scripts), Check file conflicts |
 | Record IDs below 0x800 (extended ESL range, Skyrim PC 1.6.1130, Dec 2023) | The Switch build is from 2022 and probably can't load them; HEDR 1.71 without those IDs does load | Add mods, Doctor |

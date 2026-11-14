@@ -106,3 +106,16 @@ def test_doctor_leaves_mods_that_dont_go_alone(tmp_path):
         DR.exclude(d, row, tx)
     codes = {(f.code, f.subject) for f in run_audit(Pack.open(d.root), deep=False).findings}
     assert not {c for c in codes if c[1] in ("Lucien2.bsa", "LucienCCPatch.esp")}
+
+
+def test_plugin_count_sets_the_warning(tmp_path):
+    """Nov 2026, Pack 2026: 83 mod plugins lost message boxes, 76 to 82 worked;
+    BSAs didn't matter."""
+    from skynx.audit import PLUGINS_BAD, PLUGINS_WARN
+    for n, sev in ((PLUGINS_WARN - 1, "info"), (PLUGINS_WARN, "aviso"), (PLUGINS_BAD, "critico")):
+        names = [f"P{i}.esp" for i in range(n)]
+        pack = new_pack(tmp_path / str(n), names)
+        for nm in names:
+            plugin(data(pack) / nm, [])
+        fs = [f for f in run_audit(Pack.open(pack.root), deep=False).findings if f.code == "sd-open-files"]
+        assert len(fs) == 1 and fs[0].severity == sev and fs[0].params["plugins"] == n
